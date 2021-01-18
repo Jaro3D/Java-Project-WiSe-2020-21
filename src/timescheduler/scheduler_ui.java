@@ -13,6 +13,7 @@ public class scheduler_ui extends javax.swing.JFrame {
     boolean passNotVisible = false;
     boolean searchActive = false;
     boolean appEdited = false;
+    boolean partEdited = false;
     int buttonIndex = 0;
     
     public scheduler_ui() {
@@ -61,33 +62,63 @@ public class scheduler_ui extends javax.swing.JFrame {
         AppEdit();
     }
     
+    //EDITING APPOINTMENTS ON CALENDER SCREEN
     private void AppEdit()
     {
-        if (appEdited) 
+        if (appEdited) //Appointment editing screen
         {
             appSaveButton.setVisible(true);
             cancelAppEditButton.setVisible(true);
             appAddButton.setVisible(false);
             addLabel.setText("Modify appointment");
+            partEditButton.setVisible(true);
+            if (partEdited) //Participants list opened
+            {
+                appPartPanel.setVisible(true);
+                appDisplayPanel.setVisible(false);
+                addLabel.setText("Edit participants");
+            }
+            else //Participants list closed
+            {
+                appPartPanel.setVisible(false);
+                appDisplayPanel.setVisible(true);
+                addLabel.setText("Modify appointment");
+            }
         }
-        else
+        else // Appointment displaying screen
         {
+            partEditButton.setVisible(true);
             appSaveButton.setVisible(false);
             cancelAppEditButton.setVisible(false);
             appAddButton.setVisible(true);
             addLabel.setText("Add new appointment");
+            appPartPanel.setVisible(false);
+            appDisplayPanel.setVisible(true);
+            if (partEdited) //Participants list opened
+            {
+                appPartPanel.setVisible(true);
+                appDisplayPanel.setVisible(false);
+                addLabel.setText("Edit participants");
+            }
+            else //Participants list closed
+            {
+                appPartPanel.setVisible(false);
+                appDisplayPanel.setVisible(true);
+                addLabel.setText("Modify appointment");
+            }
         }
             
     }
     
+    //SWITCHING BACKGROUNDS
     private void CheckButtonIndex()
     {
         switch(buttonIndex) 
         {
-        case 0:
+        case 0: //Login screen
             bgLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/OnTime_BG.png")));
             break;
-        case 1:
+        case 1: //Dashboard
             DataOverviewMenu();
             mainMenu.setSelectedIndex(0);
             bgLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/OnTime_BG_Home.png")));
@@ -95,14 +126,14 @@ public class scheduler_ui extends javax.swing.JFrame {
             calenderButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/CalenderButton.png")));
             profilesButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/ProfilesButton.png")));
             break;
-        case 2:
+        case 2: //Appontment screen
             mainMenu.setSelectedIndex(1);
             bgLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/OnTime_BG_Calender.png")));
             calenderButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/CalenderButton_over.png")));
             homeButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/HomeButton.png")));
             profilesButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/ProfilesButton.png")));
             break;
-        case 3:
+        case 3: //Contacts and profile screen
             mainMenu.setSelectedIndex(2);
             bgLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/OnTime_BG_Profiles.png")));
             profilesButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/ProfilesButton_over.png")));
@@ -115,9 +146,10 @@ public class scheduler_ui extends javax.swing.JFrame {
         }
     }
     
+    //CONTACTS SCREEN SEARCH BAR
     private void SearchActive()
     {
-        if (searchActive) 
+        if (searchActive) //Search bar enabled
         {
             serachBG.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/SearchField.png")));
             searchField.setVisible(true);
@@ -125,28 +157,31 @@ public class scheduler_ui extends javax.swing.JFrame {
             removeButton.setVisible(false);
             friednsLabel.setText("Users found:");
         }
-        else
+        else //Searchbar disabled
         {
             serachBG.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/SearchField_closed.png")));
             searchField.setVisible(false);
             addButton.setVisible(false);
             removeButton.setVisible(true);
-            friednsLabel.setText("Your Friends:");
+            friednsLabel.setText("Your contacts:");
         }
     }
     
+    //ENABLE PROFILE DATA EDIT
     private void DataEditMenu()
     {
         dataOverview.setVisible(false);
         dataEdit.setVisible(true);
     }
     
+    //ENABLE PROFILE DATA DISPLAY
     private void DataOverviewMenu()
     {
         dataEdit.setVisible(false);
         dataOverview.setVisible(true);
     }
     
+    //ENABLE LOGIN MENU
     private void LoginMenu()
     {
         buttonIndex = 0;
@@ -158,6 +193,7 @@ public class scheduler_ui extends javax.swing.JFrame {
         goBackButton.setVisible(false);
     }
     
+    //ENABLE REGISTRATION MENU
     private void SignUpMenu()
     {
         signupButton.setVisible(false);
@@ -168,6 +204,7 @@ public class scheduler_ui extends javax.swing.JFrame {
         goBackButton.setVisible(true);
     }
     
+    //LOGIN AND REGISTRATION PASSWORT DISPLAY SETTINGS
     private void CheckVisibility()
     {
         if (passNotVisible) 
@@ -263,9 +300,9 @@ public class scheduler_ui extends javax.swing.JFrame {
         tile_3_name = new javax.swing.JLabel();
         tile_3_duration = new javax.swing.JLabel();
         tile_3_location_street = new javax.swing.JLabel();
+        tile_3_participants_amount = new javax.swing.JLabel();
         tile_3_participants_label = new javax.swing.JLabel();
         tile_3_location_city = new javax.swing.JLabel();
-        tile_3_participants = new javax.swing.JComboBox<>();
         tile_3_month = new javax.swing.JLabel();
         tile_3_date = new javax.swing.JLabel();
         tile_3 = new javax.swing.JLabel();
@@ -273,9 +310,9 @@ public class scheduler_ui extends javax.swing.JFrame {
         tile_2_name = new javax.swing.JLabel();
         tile_2_duration = new javax.swing.JLabel();
         tile_2_location_street = new javax.swing.JLabel();
+        tile_2_participants_amount = new javax.swing.JLabel();
         tile_2_participants_label = new javax.swing.JLabel();
         tile_2_location_city = new javax.swing.JLabel();
-        tile_2_participants = new javax.swing.JComboBox<>();
         tile_2_month = new javax.swing.JLabel();
         tile_2_date = new javax.swing.JLabel();
         tile_2 = new javax.swing.JLabel();
@@ -284,8 +321,8 @@ public class scheduler_ui extends javax.swing.JFrame {
         tile_1_duration = new javax.swing.JLabel();
         tile_1_location_street = new javax.swing.JLabel();
         tile_1_participants_label = new javax.swing.JLabel();
+        tile_1_participants_amount = new javax.swing.JLabel();
         tile_1_location_city = new javax.swing.JLabel();
-        tile_1_participants = new javax.swing.JComboBox<>();
         tile_1_month = new javax.swing.JLabel();
         tile_1_date = new javax.swing.JLabel();
         tile_1 = new javax.swing.JLabel();
@@ -294,24 +331,37 @@ public class scheduler_ui extends javax.swing.JFrame {
         addLabel = new javax.swing.JLabel();
         listDisplay = new javax.swing.JScrollPane();
         appList = new javax.swing.JList<>();
+        appDisplayPanel = new javax.swing.JPanel();
         nameEventLabel = new javax.swing.JLabel();
         nameEventInput = new javax.swing.JTextField();
         dateEventLabel = new javax.swing.JLabel();
         dateEventInput = new com.github.lgooddatepicker.components.DatePicker();
         btimeEventLabel = new javax.swing.JLabel();
         btimeEventInput = new com.github.lgooddatepicker.components.TimePicker();
-        etimeEventLabel = new javax.swing.JLabel();
-        etimeEventInput = new com.github.lgooddatepicker.components.TimePicker();
-        locationEventLabel = new javax.swing.JLabel();
-        locationEventInput = new javax.swing.JTextField();
-        participantsEventLabel = new javax.swing.JLabel();
-        participantsEventInput = new javax.swing.JComboBox<>();
+        durationEventLabel = new javax.swing.JLabel();
+        duratonEventInput = new com.github.lgooddatepicker.components.TimePicker();
+        cityEventLabel = new javax.swing.JLabel();
+        cityEventInput = new javax.swing.JTextField();
+        streetEventLabel = new javax.swing.JLabel();
+        streetEventInput = new javax.swing.JTextField();
         priorityEventLabel = new javax.swing.JLabel();
         priorityEventInput = new javax.swing.JComboBox<>();
+        nitifEventLabel = new javax.swing.JLabel();
+        notifEventInput = new javax.swing.JComboBox<>();
+        partEditButton = new javax.swing.JButton();
+        appPartPanel = new javax.swing.JPanel();
+        yourContLabel = new javax.swing.JLabel();
+        partContacts = new javax.swing.JScrollPane();
+        partContactsList = new javax.swing.JList<>();
+        eventPartLabel = new javax.swing.JLabel();
+        partAddContacts = new javax.swing.JScrollPane();
+        partAddContactsList = new javax.swing.JList<>();
+        partSaveButton = new javax.swing.JButton();
         appEditButton = new javax.swing.JButton();
+        appExportButton = new javax.swing.JButton();
         appRemoveButton = new javax.swing.JButton();
-        appAddButton = new javax.swing.JButton();
         appSaveButton = new javax.swing.JButton();
+        appAddButton = new javax.swing.JButton();
         cancelAppEditButton = new javax.swing.JButton();
         appAppTile = new javax.swing.JLabel();
         appDisplayTile = new javax.swing.JLabel();
@@ -679,34 +729,35 @@ public class scheduler_ui extends javax.swing.JFrame {
         tilePanel_3.add(tile_3_name);
         tile_3_name.setBounds(20, 20, 160, 20);
 
+        tile_3_duration.setText("10:00 - 12:00");
         tile_3_duration.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_3_duration.setForeground(new java.awt.Color(255, 255, 255));
-        tile_3_duration.setText("10:00 - 12:00");
         tilePanel_3.add(tile_3_duration);
-        tile_3_duration.setBounds(20, 40, 160, 20);
+        tile_3_duration.setBounds(20, 50, 160, 20);
 
+        tile_3_location_street.setText("Jenaer Strasse 11");
         tile_3_location_street.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_3_location_street.setForeground(new java.awt.Color(255, 255, 255));
-        tile_3_location_street.setText("Jenaer Strasse 11");
         tilePanel_3.add(tile_3_location_street);
-        tile_3_location_street.setBounds(20, 60, 160, 20);
+        tile_3_location_street.setBounds(20, 70, 160, 20);
 
+        tile_3_participants_amount.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        tile_3_participants_amount.setForeground(new java.awt.Color(255, 255, 255));
+        tile_3_participants_amount.setText("56");
+        tilePanel_3.add(tile_3_participants_amount);
+        tile_3_participants_amount.setBounds(100, 110, 50, 20);
+
+        tile_3_participants_label.setText("Participants:");
         tile_3_participants_label.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_3_participants_label.setForeground(new java.awt.Color(255, 255, 255));
-        tile_3_participants_label.setText("Participants:");
         tilePanel_3.add(tile_3_participants_label);
-        tile_3_participants_label.setBounds(20, 100, 160, 20);
+        tile_3_participants_label.setBounds(20, 110, 80, 20);
 
+        tile_3_location_city.setText("Berlin");
         tile_3_location_city.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_3_location_city.setForeground(new java.awt.Color(255, 255, 255));
-        tile_3_location_city.setText("Berlin");
         tilePanel_3.add(tile_3_location_city);
-        tile_3_location_city.setBounds(20, 80, 160, 20);
-
-        tile_3_participants.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        tile_3_participants.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Brayden Odom", "Elize Johnson", "Wyatt Rodriguez", "Millie Campbell", "Jayden-James Dalby", "Monique Montgomery" }));
-        tilePanel_3.add(tile_3_participants);
-        tile_3_participants.setBounds(18, 120, 160, 30);
+        tile_3_location_city.setBounds(20, 90, 160, 20);
 
         tile_3_month.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
         tile_3_month.setForeground(new java.awt.Color(153, 153, 153));
@@ -738,34 +789,35 @@ public class scheduler_ui extends javax.swing.JFrame {
         tilePanel_2.add(tile_2_name);
         tile_2_name.setBounds(20, 20, 160, 20);
 
+        tile_2_duration.setText("18:30 - 19:00");
         tile_2_duration.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_2_duration.setForeground(new java.awt.Color(255, 255, 255));
-        tile_2_duration.setText("18:30 - 19:00");
         tilePanel_2.add(tile_2_duration);
-        tile_2_duration.setBounds(20, 40, 160, 20);
+        tile_2_duration.setBounds(20, 50, 160, 20);
 
+        tile_2_location_street.setText("Potsdamer Platz 40");
         tile_2_location_street.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_2_location_street.setForeground(new java.awt.Color(255, 255, 255));
-        tile_2_location_street.setText("Potsdamer Platz 40");
         tilePanel_2.add(tile_2_location_street);
-        tile_2_location_street.setBounds(20, 60, 160, 20);
+        tile_2_location_street.setBounds(20, 70, 160, 20);
 
+        tile_2_participants_amount.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        tile_2_participants_amount.setForeground(new java.awt.Color(255, 255, 255));
+        tile_2_participants_amount.setText("7");
+        tilePanel_2.add(tile_2_participants_amount);
+        tile_2_participants_amount.setBounds(100, 110, 50, 20);
+
+        tile_2_participants_label.setText("Participants:");
         tile_2_participants_label.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_2_participants_label.setForeground(new java.awt.Color(255, 255, 255));
-        tile_2_participants_label.setText("Participants:");
         tilePanel_2.add(tile_2_participants_label);
-        tile_2_participants_label.setBounds(20, 100, 160, 20);
+        tile_2_participants_label.setBounds(20, 110, 80, 20);
 
+        tile_2_location_city.setText("Frankfurt am Main");
         tile_2_location_city.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_2_location_city.setForeground(new java.awt.Color(255, 255, 255));
-        tile_2_location_city.setText("Frankfurt am Main");
         tilePanel_2.add(tile_2_location_city);
-        tile_2_location_city.setBounds(20, 80, 160, 20);
-
-        tile_2_participants.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        tile_2_participants.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Jayden-James Dalby", "Monique Montgomery", "Brayden Odom", "Elize Johnson", "Wyatt Rodriguez", "Millie Campbell" }));
-        tilePanel_2.add(tile_2_participants);
-        tile_2_participants.setBounds(18, 120, 160, 30);
+        tile_2_location_city.setBounds(20, 90, 160, 20);
 
         tile_2_month.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
         tile_2_month.setForeground(new java.awt.Color(153, 153, 153));
@@ -797,34 +849,35 @@ public class scheduler_ui extends javax.swing.JFrame {
         tilePanel_1.add(tile_1_name);
         tile_1_name.setBounds(20, 20, 160, 20);
 
+        tile_1_duration.setText("13:00 - 14:00");
         tile_1_duration.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_1_duration.setForeground(new java.awt.Color(255, 255, 255));
-        tile_1_duration.setText("13:00 - 14:00");
         tilePanel_1.add(tile_1_duration);
-        tile_1_duration.setBounds(20, 40, 160, 20);
+        tile_1_duration.setBounds(20, 50, 160, 20);
 
+        tile_1_location_street.setText("Kurfürstendamm 51");
         tile_1_location_street.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_1_location_street.setForeground(new java.awt.Color(255, 255, 255));
-        tile_1_location_street.setText("Kurfürstendamm 51");
         tilePanel_1.add(tile_1_location_street);
-        tile_1_location_street.setBounds(20, 60, 160, 20);
+        tile_1_location_street.setBounds(20, 70, 160, 20);
 
+        tile_1_participants_label.setText("Participants:");
         tile_1_participants_label.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_1_participants_label.setForeground(new java.awt.Color(255, 255, 255));
-        tile_1_participants_label.setText("Participants:");
         tilePanel_1.add(tile_1_participants_label);
-        tile_1_participants_label.setBounds(20, 100, 160, 20);
+        tile_1_participants_label.setBounds(20, 110, 80, 20);
 
+        tile_1_participants_amount.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        tile_1_participants_amount.setForeground(new java.awt.Color(255, 255, 255));
+        tile_1_participants_amount.setText("3");
+        tilePanel_1.add(tile_1_participants_amount);
+        tile_1_participants_amount.setBounds(100, 110, 50, 20);
+
+        tile_1_location_city.setText("Frankfurt am Main");
         tile_1_location_city.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_1_location_city.setForeground(new java.awt.Color(255, 255, 255));
-        tile_1_location_city.setText("Frankfurt am Main");
         tilePanel_1.add(tile_1_location_city);
-        tile_1_location_city.setBounds(20, 80, 160, 20);
-
-        tile_1_participants.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        tile_1_participants.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Wyatt Rodriguez", "Millie Campbell", "Jayden-James Dalby", "Monique Montgomery", "Brayden Odom", "Elize Johnson" }));
-        tilePanel_1.add(tile_1_participants);
-        tile_1_participants.setBounds(18, 120, 160, 30);
+        tile_1_location_city.setBounds(20, 90, 160, 20);
 
         tile_1_month.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
         tile_1_month.setForeground(new java.awt.Color(153, 153, 153));
@@ -860,18 +913,18 @@ public class scheduler_ui extends javax.swing.JFrame {
         calenderPanel.add(appLabel);
         appLabel.setBounds(190, 30, 180, 40);
 
-        addLabel.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
-        addLabel.setForeground(new java.awt.Color(255, 255, 255));
         addLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         addLabel.setText("Add new appointment");
+        addLabel.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        addLabel.setForeground(new java.awt.Color(255, 255, 255));
         calenderPanel.add(addLabel);
-        addLabel.setBounds(500, 30, 260, 40);
+        addLabel.setBounds(500, 20, 260, 30);
 
+        listDisplay.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
         listDisplay.setBackground(new java.awt.Color(251, 101, 120));
         listDisplay.setBorder(null);
-        listDisplay.setForeground(new java.awt.Color(163, 64, 76));
-        listDisplay.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
         listDisplay.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
+        listDisplay.setForeground(new java.awt.Color(163, 64, 76));
 
         appList.setModel(new javax.swing.AbstractListModel<String>() {
             String[] strings = { "28.12.2020 12:30 Java Lecture", "29.12.2020 08:15 SWE Lecture", "29.12.2020 17:45 Database Lecture", "30.12.2020 13:15 Statistic Lacture", "01.01.2021 00:00 New Year", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " " };
@@ -888,81 +941,169 @@ public class scheduler_ui extends javax.swing.JFrame {
         calenderPanel.add(listDisplay);
         listDisplay.setBounds(150, 80, 270, 290);
 
+        appDisplayPanel.setOpaque(false);
+        appDisplayPanel.setLayout(null);
+
+        nameEventLabel.setText("Name");
         nameEventLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         nameEventLabel.setForeground(new java.awt.Color(255, 255, 255));
-        nameEventLabel.setText("Name");
-        calenderPanel.add(nameEventLabel);
-        nameEventLabel.setBounds(510, 75, 235, 30);
+        appDisplayPanel.add(nameEventLabel);
+        nameEventLabel.setBounds(0, 0, 235, 20);
 
         nameEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        calenderPanel.add(nameEventInput);
-        nameEventInput.setBounds(510, 100, 235, 30);
+        appDisplayPanel.add(nameEventInput);
+        nameEventInput.setBounds(0, 20, 235, 30);
 
+        dateEventLabel.setText("Date");
         dateEventLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         dateEventLabel.setForeground(new java.awt.Color(255, 255, 255));
-        dateEventLabel.setText("Date");
-        calenderPanel.add(dateEventLabel);
-        dateEventLabel.setBounds(510, 135, 120, 30);
+        appDisplayPanel.add(dateEventLabel);
+        dateEventLabel.setBounds(0, 50, 120, 20);
 
         dateEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        calenderPanel.add(dateEventInput);
-        dateEventInput.setBounds(510, 160, 230, 30);
+        appDisplayPanel.add(dateEventInput);
+        dateEventInput.setBounds(0, 70, 230, 30);
 
+        btimeEventLabel.setText("Start time");
         btimeEventLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         btimeEventLabel.setForeground(new java.awt.Color(255, 255, 255));
-        btimeEventLabel.setText("Start time");
-        calenderPanel.add(btimeEventLabel);
-        btimeEventLabel.setBounds(510, 195, 95, 30);
+        appDisplayPanel.add(btimeEventLabel);
+        btimeEventLabel.setBounds(0, 100, 95, 20);
 
         btimeEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        calenderPanel.add(btimeEventInput);
-        btimeEventInput.setBounds(630, 220, 110, 30);
+        appDisplayPanel.add(btimeEventInput);
+        btimeEventInput.setBounds(0, 120, 110, 30);
 
-        etimeEventLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        etimeEventLabel.setForeground(new java.awt.Color(255, 255, 255));
-        etimeEventLabel.setText("End time");
-        calenderPanel.add(etimeEventLabel);
-        etimeEventLabel.setBounds(630, 195, 95, 30);
+        durationEventLabel.setText("Duration");
+        durationEventLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        durationEventLabel.setForeground(new java.awt.Color(255, 255, 255));
+        appDisplayPanel.add(durationEventLabel);
+        durationEventLabel.setBounds(120, 100, 95, 20);
 
-        etimeEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        calenderPanel.add(etimeEventInput);
-        etimeEventInput.setBounds(510, 220, 110, 30);
+        duratonEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        appDisplayPanel.add(duratonEventInput);
+        duratonEventInput.setBounds(120, 120, 110, 30);
 
-        locationEventLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        locationEventLabel.setForeground(new java.awt.Color(255, 255, 255));
-        locationEventLabel.setText("Location");
-        calenderPanel.add(locationEventLabel);
-        locationEventLabel.setBounds(510, 255, 235, 30);
+        cityEventLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        cityEventLabel.setForeground(new java.awt.Color(255, 255, 255));
+        cityEventLabel.setText("City");
+        appDisplayPanel.add(cityEventLabel);
+        cityEventLabel.setBounds(0, 152, 235, 17);
 
-        locationEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        calenderPanel.add(locationEventInput);
-        locationEventInput.setBounds(510, 280, 235, 30);
+        cityEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        appDisplayPanel.add(cityEventInput);
+        cityEventInput.setBounds(0, 170, 235, 30);
 
-        participantsEventLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        participantsEventLabel.setForeground(new java.awt.Color(255, 255, 255));
-        participantsEventLabel.setText("Participants");
-        calenderPanel.add(participantsEventLabel);
-        participantsEventLabel.setBounds(510, 315, 120, 30);
+        streetEventLabel.setText("Street");
+        streetEventLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        streetEventLabel.setForeground(new java.awt.Color(255, 255, 255));
+        appDisplayPanel.add(streetEventLabel);
+        streetEventLabel.setBounds(0, 203, 235, 17);
 
-        participantsEventInput.setBackground(new java.awt.Color(204, 0, 0));
-        participantsEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        participantsEventInput.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Yousuf Dunne", "Rebekah Avalos", "Siyana Espinosa", "Zain Sumner", "Madelaine Norton", "Scarlette Daniels", "Jaden Ferreira", "Kynan Bate", "Noor Cope", "Zachary Finnegan" }));
-        participantsEventInput.setBorder(null);
-        calenderPanel.add(participantsEventInput);
-        participantsEventInput.setBounds(510, 340, 145, 30);
+        streetEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        appDisplayPanel.add(streetEventInput);
+        streetEventInput.setBounds(0, 220, 235, 30);
 
+        priorityEventLabel.setText("Priority");
         priorityEventLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         priorityEventLabel.setForeground(new java.awt.Color(255, 255, 255));
-        priorityEventLabel.setText("Priority");
-        calenderPanel.add(priorityEventLabel);
-        priorityEventLabel.setBounds(665, 315, 80, 30);
+        appDisplayPanel.add(priorityEventLabel);
+        priorityEventLabel.setBounds(155, 253, 80, 17);
 
-        priorityEventInput.setBackground(new java.awt.Color(204, 0, 0));
-        priorityEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         priorityEventInput.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Low", "Medium", "High" }));
+        priorityEventInput.setBackground(new java.awt.Color(204, 0, 0));
         priorityEventInput.setBorder(null);
-        calenderPanel.add(priorityEventInput);
-        priorityEventInput.setBounds(665, 340, 80, 30);
+        priorityEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        appDisplayPanel.add(priorityEventInput);
+        priorityEventInput.setBounds(155, 270, 80, 30);
+
+        nitifEventLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        nitifEventLabel.setForeground(new java.awt.Color(255, 255, 255));
+        nitifEventLabel.setText("Notification");
+        appDisplayPanel.add(nitifEventLabel);
+        nitifEventLabel.setBounds(0, 253, 80, 17);
+
+        notifEventInput.setBackground(new java.awt.Color(204, 0, 0));
+        notifEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        notifEventInput.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "1 week", "3 days", "1 hour", "10 minutes" }));
+        notifEventInput.setBorder(null);
+        appDisplayPanel.add(notifEventInput);
+        notifEventInput.setBounds(0, 270, 110, 30);
+
+        partEditButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/PartButton.png"))); // NOI18N
+        partEditButton.setBorder(null);
+        partEditButton.setOpaque(false);
+        partEditButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/PartButton_pressed.png"))); // NOI18N
+        partEditButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/PartButton_over.png"))); // NOI18N
+        partEditButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                partEditButtonActionPerformed(evt);
+            }
+        });
+        appDisplayPanel.add(partEditButton);
+        partEditButton.setBounds(50, 315, 145, 30);
+
+        calenderPanel.add(appDisplayPanel);
+        appDisplayPanel.setBounds(510, 50, 235, 350);
+
+        appPartPanel.setOpaque(false);
+        appPartPanel.setLayout(null);
+
+        yourContLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        yourContLabel.setForeground(new java.awt.Color(255, 255, 255));
+        yourContLabel.setText("Your contacts:");
+        appPartPanel.add(yourContLabel);
+        yourContLabel.setBounds(0, 0, 240, 20);
+
+        partContactsList.setModel(new javax.swing.AbstractListModel<String>() {
+            String[] strings = { "Aidan Alcock", "Maddie Koch", "Ayman Jenkins", "Keir Livingston", "Beck Whitney", "Mathias Vance" };
+            public int getSize() { return strings.length; }
+            public String getElementAt(int i) { return strings[i]; }
+        });
+        partContactsList.setBackground(new java.awt.Color(224, 92, 109));
+        partContactsList.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        partContactsList.setForeground(new java.awt.Color(255, 255, 255));
+        partContactsList.setSelectionBackground(new java.awt.Color(209, 80, 97));
+        partContacts.setViewportView(partContactsList);
+
+        appPartPanel.add(partContacts);
+        partContacts.setBounds(0, 20, 235, 100);
+
+        eventPartLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        eventPartLabel.setForeground(new java.awt.Color(255, 255, 255));
+        eventPartLabel.setText("Event participants:");
+        appPartPanel.add(eventPartLabel);
+        eventPartLabel.setBounds(0, 135, 240, 20);
+
+        partAddContactsList.setModel(new javax.swing.AbstractListModel<String>() {
+            String[] strings = { "Sullivan Hulme", "Halima Ellwood", "Koby Sinclair", "Milena Tierney", " " };
+            public int getSize() { return strings.length; }
+            public String getElementAt(int i) { return strings[i]; }
+        });
+        partAddContactsList.setBackground(new java.awt.Color(224, 92, 109));
+        partAddContactsList.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        partAddContactsList.setForeground(new java.awt.Color(255, 255, 255));
+        partAddContactsList.setSelectionBackground(new java.awt.Color(209, 80, 97));
+        partAddContacts.setViewportView(partAddContactsList);
+
+        appPartPanel.add(partAddContacts);
+        partAddContacts.setBounds(0, 160, 235, 100);
+
+        partSaveButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/PartSaveButton.png"))); // NOI18N
+        partSaveButton.setBorder(null);
+        partSaveButton.setOpaque(false);
+        partSaveButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/PartSaveButton_pressed.png"))); // NOI18N
+        partSaveButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/PartSaveButton_over.png"))); // NOI18N
+        partSaveButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                partSaveButtonActionPerformed(evt);
+            }
+        });
+        appPartPanel.add(partSaveButton);
+        partSaveButton.setBounds(80, 290, 70, 30);
+
+        calenderPanel.add(appPartPanel);
+        appPartPanel.setBounds(510, 70, 235, 330);
 
         appEditButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/EditButton.png"))); // NOI18N
         appEditButton.setBorder(null);
@@ -975,7 +1116,15 @@ public class scheduler_ui extends javax.swing.JFrame {
             }
         });
         calenderPanel.add(appEditButton);
-        appEditButton.setBounds(160, 400, 90, 40);
+        appEditButton.setBounds(142, 400, 90, 40);
+
+        appExportButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/ExportButton.png"))); // NOI18N
+        appExportButton.setBorder(null);
+        appExportButton.setOpaque(false);
+        appExportButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/ExportButton_pressed.png"))); // NOI18N
+        appExportButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/ExportButton_over.png"))); // NOI18N
+        calenderPanel.add(appExportButton);
+        appExportButton.setBounds(240, 400, 90, 40);
 
         appRemoveButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/RemoveButton.png"))); // NOI18N
         appRemoveButton.setBorder(null);
@@ -983,15 +1132,7 @@ public class scheduler_ui extends javax.swing.JFrame {
         appRemoveButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/RemoveButton_pressed.png"))); // NOI18N
         appRemoveButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/RemoveButton_over.png"))); // NOI18N
         calenderPanel.add(appRemoveButton);
-        appRemoveButton.setBounds(290, 400, 120, 40);
-
-        appAddButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/AddButton.png"))); // NOI18N
-        appAddButton.setBorder(null);
-        appAddButton.setOpaque(false);
-        appAddButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/AddButton_pressed.png"))); // NOI18N
-        appAddButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/AddButton_over.png"))); // NOI18N
-        calenderPanel.add(appAddButton);
-        appAddButton.setBounds(585, 400, 90, 40);
+        appRemoveButton.setBounds(338, 400, 90, 40);
 
         appSaveButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/SaveButton.png"))); // NOI18N
         appSaveButton.setBorder(null);
@@ -1004,11 +1145,19 @@ public class scheduler_ui extends javax.swing.JFrame {
             }
         });
         calenderPanel.add(appSaveButton);
-        appSaveButton.setBounds(585, 390, 90, 40);
+        appSaveButton.setBounds(630, 410, 90, 40);
 
-        cancelAppEditButton.setForeground(new java.awt.Color(255, 255, 255));
+        appAddButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/AddButton.png"))); // NOI18N
+        appAddButton.setBorder(null);
+        appAddButton.setOpaque(false);
+        appAddButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/AddButton_pressed.png"))); // NOI18N
+        appAddButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/AddButton_over.png"))); // NOI18N
+        calenderPanel.add(appAddButton);
+        appAddButton.setBounds(590, 410, 90, 40);
+
         cancelAppEditButton.setText("Cancel");
         cancelAppEditButton.setBorder(null);
+        cancelAppEditButton.setForeground(new java.awt.Color(255, 255, 255));
         cancelAppEditButton.setOpaque(false);
         cancelAppEditButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -1027,7 +1176,7 @@ public class scheduler_ui extends javax.swing.JFrame {
             }
         });
         calenderPanel.add(cancelAppEditButton);
-        cancelAppEditButton.setBounds(580, 425, 100, 40);
+        cancelAppEditButton.setBounds(510, 410, 100, 40);
 
         appAppTile.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/PanelTile.png"))); // NOI18N
         calenderPanel.add(appAppTile);
@@ -1316,11 +1465,11 @@ public class scheduler_ui extends javax.swing.JFrame {
         friendsPanel.add(serachBG);
         serachBG.setBounds(155, 35, 260, 40);
 
+        friednsLabel.setText("Your Friends:");
         friednsLabel.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
         friednsLabel.setForeground(new java.awt.Color(255, 255, 255));
-        friednsLabel.setText("Your Friends:");
         friendsPanel.add(friednsLabel);
-        friednsLabel.setBounds(160, 100, 130, 30);
+        friednsLabel.setBounds(160, 100, 240, 30);
 
         friendsView.setBorder(null);
 
@@ -1707,6 +1856,7 @@ public class scheduler_ui extends javax.swing.JFrame {
 
     private void appEditButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_appEditButtonActionPerformed
         appEdited = true;
+        partEdited = false;
         AppEdit();
     }//GEN-LAST:event_appEditButtonActionPerformed
 
@@ -1714,6 +1864,16 @@ public class scheduler_ui extends javax.swing.JFrame {
         appEdited = false;
         AppEdit();
     }//GEN-LAST:event_appSaveButtonActionPerformed
+
+    private void partEditButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_partEditButtonActionPerformed
+        partEdited = true;
+        AppEdit();
+    }//GEN-LAST:event_partEditButtonActionPerformed
+
+    private void partSaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_partSaveButtonActionPerformed
+        partEdited = false;
+        AppEdit();
+    }//GEN-LAST:event_partSaveButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -1755,10 +1915,13 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JLabel addLabel;
     private javax.swing.JButton appAddButton;
     private javax.swing.JLabel appAppTile;
+    private javax.swing.JPanel appDisplayPanel;
     private javax.swing.JLabel appDisplayTile;
     private javax.swing.JButton appEditButton;
+    private javax.swing.JButton appExportButton;
     private javax.swing.JLabel appLabel;
     private javax.swing.JList<String> appList;
+    private javax.swing.JPanel appPartPanel;
     private javax.swing.JButton appRemoveButton;
     private javax.swing.JButton appSaveButton;
     private javax.swing.JLabel bgLabel;
@@ -1770,14 +1933,17 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JPanel calenderPanel;
     private javax.swing.JButton cancelAppEditButton;
     private javax.swing.JButton cancelDataEdit;
+    private javax.swing.JTextField cityEventInput;
+    private javax.swing.JLabel cityEventLabel;
     private javax.swing.JPanel dataEdit;
     private javax.swing.JPanel dataOverview;
     private com.github.lgooddatepicker.components.DatePicker dateEventInput;
     private javax.swing.JLabel dateEventLabel;
+    private javax.swing.JLabel durationEventLabel;
+    private com.github.lgooddatepicker.components.TimePicker duratonEventInput;
     private javax.swing.JButton editButton;
     private javax.swing.JLabel editLabel;
-    private com.github.lgooddatepicker.components.TimePicker etimeEventInput;
-    private javax.swing.JLabel etimeEventLabel;
+    private javax.swing.JLabel eventPartLabel;
     private javax.swing.JButton exitButton;
     private javax.swing.JTextField firstNameEdit;
     private javax.swing.JPanel fistNameUnderline;
@@ -1792,8 +1958,6 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JTextField lastNameEdit;
     private javax.swing.JPanel lastNameUnderline;
     private javax.swing.JScrollPane listDisplay;
-    private javax.swing.JTextField locationEventInput;
-    private javax.swing.JLabel locationEventLabel;
     private javax.swing.JButton loginButton;
     private javax.swing.JPanel loginPanel;
     private javax.swing.JLabel logoLabel;
@@ -1811,12 +1975,18 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JTextField nameInput;
     private javax.swing.JPanel nameUnderline;
     private javax.swing.JLabel nameView;
+    private javax.swing.JLabel nitifEventLabel;
+    private javax.swing.JComboBox<String> notifEventInput;
     private javax.swing.JLabel occView;
     private javax.swing.JTextField occupationEdit;
     private javax.swing.JPanel occupationUnderline;
     private javax.swing.JLabel outputLabel;
-    private javax.swing.JComboBox<String> participantsEventInput;
-    private javax.swing.JLabel participantsEventLabel;
+    private javax.swing.JScrollPane partAddContacts;
+    private javax.swing.JList<String> partAddContactsList;
+    private javax.swing.JScrollPane partContacts;
+    private javax.swing.JList<String> partContactsList;
+    private javax.swing.JButton partEditButton;
+    private javax.swing.JButton partSaveButton;
     private javax.swing.JButton passVisButton;
     private javax.swing.JPasswordField passwordConfInput;
     private javax.swing.JPanel passwordConfUnderline;
@@ -1832,6 +2002,8 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JTextField searchField;
     private javax.swing.JLabel serachBG;
     private javax.swing.JButton signupButton;
+    private javax.swing.JTextField streetEventInput;
+    private javax.swing.JLabel streetEventLabel;
     private javax.swing.JPanel tilePanel_1;
     private javax.swing.JPanel tilePanel_2;
     private javax.swing.JPanel tilePanel_3;
@@ -1842,7 +2014,7 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JLabel tile_1_location_street;
     private javax.swing.JLabel tile_1_month;
     private javax.swing.JLabel tile_1_name;
-    private javax.swing.JComboBox<String> tile_1_participants;
+    private javax.swing.JLabel tile_1_participants_amount;
     private javax.swing.JLabel tile_1_participants_label;
     private javax.swing.JLabel tile_2;
     private javax.swing.JLabel tile_2_date;
@@ -1851,7 +2023,7 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JLabel tile_2_location_street;
     private javax.swing.JLabel tile_2_month;
     private javax.swing.JLabel tile_2_name;
-    private javax.swing.JComboBox<String> tile_2_participants;
+    private javax.swing.JLabel tile_2_participants_amount;
     private javax.swing.JLabel tile_2_participants_label;
     private javax.swing.JLabel tile_3;
     private javax.swing.JLabel tile_3_date;
@@ -1860,7 +2032,7 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JLabel tile_3_location_street;
     private javax.swing.JLabel tile_3_month;
     private javax.swing.JLabel tile_3_name;
-    private javax.swing.JComboBox<String> tile_3_participants;
+    private javax.swing.JLabel tile_3_participants_amount;
     private javax.swing.JLabel tile_3_participants_label;
     private javax.swing.JLabel upcomingLabels;
     private javax.swing.JPanel upperPanel;
@@ -1870,5 +2042,6 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JLabel userTile;
     private javax.swing.JLabel usernameView;
     private javax.swing.JLabel welcomeLabel;
+    private javax.swing.JLabel yourContLabel;
     // End of variables declaration//GEN-END:variables
 }
