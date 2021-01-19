@@ -86,7 +86,7 @@ public class Notification
      * @param eventAddress
      * @param delay
      * @param eventDateStart
-     * @param eventDateEnd
+     * @param eventDuration
      * @param priority 
      */
     Notification(String username, String receiverAddresse, String memberAdresses, String eventName, String[] eventMembers, String[] eventAddress, int delay, Date eventDateStart, String eventDuration, int priority)
