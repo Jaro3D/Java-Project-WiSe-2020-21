@@ -55,9 +55,9 @@ public class Notification
      */
     private Date eventDateStart;
     /**
-     * Contains the end of the event corresponding to the notification.
+     * Contains the duration of the event corresponding to the notification.
      */
-    private Date eventDateEnd;
+    private String eventDuration;
     /**
      * Contais the date information when the notification mail should be sended.
      * This will be created upon cunstructor call from the eventDateStart and delay attributes.
@@ -89,7 +89,7 @@ public class Notification
      * @param eventDateEnd
      * @param priority 
      */
-    Notification(String username, String receiverAddresse, String memberAdresses, String eventName, String[] eventMembers, String[] eventAddress, int delay, Date eventDateStart, Date eventDateEnd, int priority)
+    Notification(String username, String receiverAddresse, String memberAdresses, String eventName, String[] eventMembers, String[] eventAddress, int delay, Date eventDateStart, String eventDuration, int priority)
     {
         this.username = username;
         this.receiverAddresse = receiverAddresse;
@@ -99,7 +99,7 @@ public class Notification
         this.eventAddress = eventAddress;
         this.delay = delay;
         this.eventDateStart = eventDateStart;
-        this.eventDateEnd = eventDateEnd;
+        this.eventDuration = eventDuration;
         this.priority = priority;
         
         switch(delay)
@@ -265,17 +265,17 @@ public class Notification
      * This is used to change the "eventDateEnd" attribute.
      * @param eventDateEnd 
      */
-    public void setEventDateEnd(Date eventDateEnd)
+    public void setEventDuration(String eventDuration)
     {
-        this.eventDateEnd = eventDateEnd;
+        this.eventDuration = eventDuration;
     }
     /**
      * This returns the value of the "eventDateEnd" attribute.
      * @return 
      */
-    public Date getEventDateEnd()
+    public String getEventDuration()
     {
-        return eventDateEnd;
+        return eventDuration;
     }
     /**
      * This is used to change the "sendDate" attribute.

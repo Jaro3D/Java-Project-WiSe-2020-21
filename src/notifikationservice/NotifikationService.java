@@ -163,7 +163,7 @@ public class NotifikationService implements Runnable
         }
         String text = "Dear User,\nYou're appointment \"" + notification.getEventName() + "\"" + delay + "See details below:\n\n"
                 + "The appointment beginns at:\n" + notification.getEventDateStart().toString() 
-                + "\n\nThe appointmemt ends at:\n" + notification.getEventDateEnd().toString() 
+                + "\n\nThe appointmemt duration is:\n" + notification.getEventDuration()
                 + "\n\nThe appointment takes place at:\n"+ address 
                 + "\nParticipants of the appointment are:\n"+ members
                 + "\nThe priority of the Appointment is:\n" + priority
@@ -276,7 +276,7 @@ public class NotifikationService implements Runnable
         }
         String text = "Dear User,\nYou're appointment \"" + notification.getEventName() + "\"" + " has changed.\nSee details below:\n\n"
                 + "The appointment beginns at:\n" + notification.getEventDateStart().toString() 
-                + "\n\nThe appointmemt ends at:\n" + notification.getEventDateEnd().toString() 
+                + "\n\nThe appointmemt ends at:\n" + notification.getEventDuration() 
                 + "\n\nThe appointment takes place at:\n"+ address 
                 + "\nParticipants of the appointment are:\n"+ members
                 + "\nThe priority of the Appointment is:\n" + priority
@@ -312,7 +312,7 @@ public class NotifikationService implements Runnable
             Date now = getNow();
             if(now.compareTo(last)>0)
             {
-                Notification[] all = Datenbank.loadNotification();
+                Notification[] all = Datenbank.loadNotifications();
                 compareAndSend(all, now);
                 last = now;
                 
