@@ -1,9 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Create by Marlon Ringel, 1314614
+ * Java WiSe 2020/21 Project
+ * 
  */
-package databaseConnector;
+package timescheduler;
 
 import java.util.Date;
 

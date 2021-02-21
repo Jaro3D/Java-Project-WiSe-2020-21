@@ -1,28 +1,43 @@
-package databaseConnector;
-
+/**
+ * Create by Marlon Ringel, 1314614
+ * Java WiSe 2020/21 Project
+ * 
+ */
+package timescheduler;
+import timescheduler.Notification;
 import java.sql.*;
 import java.util.Arrays;
 import org.apache.commons.lang3.ArrayUtils;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Date;
+
 /**
  *
- * @author MyUniLaptop
+ * Provides methodes to connect to the database.
  */
-
-
-
-
 public class Database {
     
+    
+    /**
+     * Connects to the database and returns a Statement object 
+     * to execute sql querys in the database
+     * @return
+     * @throws SQLException 
+     */
     private static Statement getStatement() throws SQLException /*Done*/
     {
-        Connection temp = DriverManager.getConnection("jdbc:mysql://localhost:3306/ontimedatabase", "root", "FB2_infoDB");
+        Connection temp = DriverManager.getConnection("jdbc:mysql://34.89.159.12:3306/ontimedatabase", "root", "1q2w3e");
         Statement newStatment = temp.createStatement();
         return newStatment;
     }
     
+    /**
+     * Returns the number(int) of entrys a table has.
+     * @param tableName
+     * @return
+     * @throws SQLException 
+     */
     private static int getRowCount(String tableName) throws SQLException /*Done*/
     {
         Statement state = getStatement();
@@ -36,6 +51,10 @@ public class Database {
         return rowCount;
     }
     
+    /**
+     * Prints the contants of a table to system out.
+     * @param tableName 
+     */
     public static void displayTable(String tableName)  /*Done*/
     {
         try {
@@ -47,12 +66,11 @@ public class Database {
                 if(tableName.equals("event"))
                 {
                     System.out.println(table.getInt("ID")+" "+table.getInt("ownerID")+" "+table.getString("title")+" "+table.getString("street")
-                            +" "+table.getString("city")+" "+ table.getDate("date")+" "+table.getString("duration")+" "+table.getInt("notification")+" "+table.getString("participantsID"));
+                            +" "+table.getString("city")+" "+ table.getDate("date")+" "+table.getString("duration")+" "+table.getInt("notification")+" "+table.getString("participantsID")+" "+table.getString("attachment"));
                 }
                 else if(tableName.equals("user"))
                 {
                     System.out.println(table.getInt("ID")+" "+table.getString("username")+" "+table.getString("email")+" "+table.getString("password")+" "+table.getString("friends")+" "+table.getInt("admin"));
-                    
                 }
             }
         } catch (SQLException ex) {
@@ -60,6 +78,11 @@ public class Database {
         }
     }
     
+    /**
+     * Converts a Java.Util.Date object into a date string.
+     * @param date
+     * @return 
+     */
     public static String convertDate(Date date) /*Done*/
     {
         String datestring = "";
@@ -82,6 +105,11 @@ public class Database {
         return datestring;
     }
     
+    /**
+     * Converts a date string into java.util.date object.
+     * @param datestring
+     * @return 
+     */
     public static Date convertDate(String datestring) /*Done*/
     {
         String[] temp = datestring.split(" ");
@@ -91,6 +119,11 @@ public class Database {
         return date;
     }
     
+    /**
+     * Returns two date objects. They contain the beginning(mon) 
+     * and end(sun) date of the current week
+     * @return 
+     */
     public static Date[] determineWeek() /*Done*/
     {
         Date now = new Date();
@@ -151,17 +184,97 @@ public class Database {
         return weekStartEnd;
         
     }
+    
+    public static String convertPath(String[] path)
+    {
+        String pathDatabase = "";
+        if(path.length==0)
+        {
+            pathDatabase = "none";
+        }
+        else
+        {
+            for(int i = 0;i<path.length;i++)
+            {
+                char[] temp = path[i].toCharArray();
+                for(int c = 0;c<temp.length;c++)
+                {
+                    if(temp[c] == '\\')
+                    {
+                        temp[c] = '~';
+                    }
+                }
+                path[i] = new String(temp);
+            }
+
+            for(int i = 0;i<path.length;i++)
+            {
+                if(pathDatabase.equals(""))
+                {
+                    pathDatabase = path[i];
+                }
+                else
+                {
+                    pathDatabase = pathDatabase + "*" + path[i];
+                }
+            }
+        }
+        return pathDatabase;
+        
+        
+    }  
+    
+    public static String[] convertPath(String pathDatabase)
+    {
+        String[] temp1 = null;
+        if(pathDatabase.equals("none"))
+        {
+            temp1 = new String[0];
+        }
+        else
+        {
+            temp1 = pathDatabase.split("\\*");
+            for(int i = 0;i<temp1.length;i++)
+            {
+                String[] temp2 = temp1[i].split("~");
+                String temp3 = "";
+                for(int j = 0;j<temp2.length;j++)
+                {
+                    if(temp3.equals(""))
+                    {
+                        temp3 = temp2[j];
+                    }
+                    else
+                    {
+                        temp3 = temp3 + "\\" + temp2[j];
+                    }
+                }
+                temp1[i] = temp3;
+                temp3 = "";
+            } 
+        }
+        return temp1;
+    }
     /*__________________________________________________*/
     /*Account management*/
     
-    public static Boolean verifyNewAccount(String username, String email) /*Done*/
+    /**
+     * Checks if the given user data is stored inside the database. If they exit, 
+     * false is returned, if not true. 
+     * @param username
+     * @param email
+     * @return 
+     */
+    public static Boolean verifyNewAccount(String username, String email) /*Done*/ /*Done*/
     {
+        String encryptedUsername = Encryption.encrypt(username);
+        String encryptedEmail = Encryption.encrypt(email);
         Boolean verify = true;
         try {
             String query1 = "select count(*) from user"
-                    +" where username='"+username+"'";
+                    +" where username='"+encryptedUsername+"'";
             String query2 = "select count(*) from user"
-                    +" where email='"+email+"'";
+                    +" where email='"+encryptedEmail+"'";
             
             Statement state = getStatement();
             ResultSet Rs1 = state.executeQuery(query1);
@@ -186,25 +299,18 @@ public class Database {
         return verify;
     }
     
-    public static void storeNewAccount(User newUser) /*Done*/
+    /**
+     * Stores a new user account in the database. 
+     * Make sure that the given data not alredy exists.
+     * @param newUser 
+     */
+    public static void storeNewAccount(User newUser) /*Done*/ /*Done*/
     {
+        User encryptedNewUser = Encryption.encryptUser(newUser);
         try {
             String store = "Insert into user "
                     + " (username, email, password, friends, admin)"
-                    + " values ('"+ newUser.getUsername() +"','"+newUser.getEmail()+"','"+newUser.getPassword()+"', '0', '0') ";
-            Statement state = getStatement();
-            state.execute(store);
-        } catch (SQLException ex) {
-            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-       
-    public static void storeNewAccountAdmin(User newUser) /*Done*/
-    {
-        try {
-            String store = "Insert into user "
-                    + " (username, email, password, friends, admin)"
-                    + " values ('"+ newUser.getUsername() +"','"+newUser.getEmail()+"','"+newUser.getPassword()+"', '0', '1') ";
+                    + " values ('"+ encryptedNewUser.getUsername() +"','"+encryptedNewUser.getEmail()+"','"+encryptedNewUser.getPassword()+"', '0', '0') ";
             Statement state = getStatement();
             state.execute(store);
         } catch (SQLException ex) {
@@ -212,24 +318,61 @@ public class Database {
         }
     }
     
-    public static User loadUser(String username) /*Done*/
+    /**
+     * Stores a new administrator account in the database. 
+     * Make sure that the given data not alredy exists
+     * @param newUser 
+     */   
+    public static void storeNewAccountAdmin(User newUser) /*Done*/ /*Done*/
     {
+        User encryptedNewUser = Encryption.encryptUser(newUser);
+        try {
+            String store = "Insert into user "
+                    + " (username, email, password, friends, admin)"
+                    + " values ('"+ encryptedNewUser.getUsername() +"','"+encryptedNewUser.getEmail()+"','"+encryptedNewUser.getPassword()+"', '0', '1') ";
+            Statement state = getStatement();
+            state.execute(store);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    /**
+     * Loads a user identified by his username from the database and returns it
+     * as an user object.
+     * @param username
+     * @return 
+     */
+    public static User loadUser(String username) /*Done*/ /*Done*/
+    {
+        String encryptedUsername = Encryption.encrypt(username);
         try {
             Statement state = getStatement();
-            ResultSet loadUser = state.executeQuery("select * from user where username='"+username+"'");
+            ResultSet loadUser = state.executeQuery("select * from user where username='"+encryptedUsername+"'");
             User loadedUser = new User();
             if(loadUser.next())
             {
                 loadedUser = new User(loadUser.getInt("ID"), loadUser.getString("username"), loadUser.getString("email"), loadUser.getString("password"), loadUser.getString("friends"), loadUser.getInt("admin"));
             }
+            if(loadedUser.getUsername()!=null)
+            {
+                return Encryption.decryptUser(loadedUser);
+            }
             return loadedUser;
+            //return Encryption.decryptUser(loadedUser);
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
         return new User();
     }
-
-    public static User loadUser(int userid) /*Done*/
+    
+    /**
+     * Loads a user identified by his id from the database and returns it
+     * as an user object.
+     * @param userid
+     * @return 
+     */
+    public static User loadUser(int userid) /*Done*/ /*Done*/
     {
         try {
             Statement state = getStatement();
@@ -239,22 +382,9 @@ public class Database {
             {
                 loadedUser = new User(loadUser.getInt("ID"), loadUser.getString("username"), loadUser.getString("email"), loadUser.getString("password"), loadUser.getString("friends"), loadUser.getInt("admin"));
             }
-            return loadedUser;
-        } catch (SQLException ex) {
-            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return new User();
-    }
-    
-    public static User loadUserViaEmail(String useremail) /*Done*/
-    {
-        try {
-            Statement state = getStatement();
-            ResultSet loadUser = state.executeQuery("select * from user where email='"+useremail+"'");
-            User loadedUser = new User();
-            if(loadUser.next())
+            if(loadedUser.getUsername()!=null)
             {
-                loadedUser = new User(loadUser.getInt("ID"), loadUser.getString("username"), loadUser.getString("email"), loadUser.getString("password"), loadUser.getString("friends"), loadUser.getInt("admin"));
+                return Encryption.decryptUser(loadedUser);
             }
             return loadedUser;
         } catch (SQLException ex) {
@@ -263,7 +393,39 @@ public class Database {
         return new User();
     }
     
-    public static User[] loadAllUsers() /*Done*/
+    /**
+     * Loads a user identified by his email address from the database and returns it
+     * as an user object.
+     * @param useremail
+     * @return 
+     */
+    public static User loadUserViaEmail(String useremail) /*Done*/ /*Done*/
+    {
+        String encryptedEmail = Encryption.encrypt(useremail);
+        try {
+            Statement state = getStatement();
+            ResultSet loadUser = state.executeQuery("select * from user where email='"+encryptedEmail+"'");
+            User loadedUser = new User();
+            if(loadUser.next())
+            {
+                loadedUser = new User(loadUser.getInt("ID"), loadUser.getString("username"), loadUser.getString("email"), loadUser.getString("password"), loadUser.getString("friends"), loadUser.getInt("admin"));
+            }
+            if(loadedUser.getUsername()!=null)
+            {
+                return Encryption.decryptUser(loadedUser);
+            }
+            return loadedUser;
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return new User();
+    }
+    
+    /**
+     * Loads all users from the database and returns them as a user object array.
+     * @return 
+     */
+    public static User[] loadAllUsers() /*Done*/ /*Done*/
     {
         try {
             int rows = getRowCount("user");
@@ -274,6 +436,7 @@ public class Database {
             for(int i = 0;loadUser.next();i++)
             {
                 allUsers[i] = new User(loadUser.getInt("ID"), loadUser.getString("username"), loadUser.getString("email"), loadUser.getString("password"), loadUser.getString("friends"), loadUser.getInt("admin"));
+                allUsers[i] = Encryption.decryptUser(allUsers[i]);
             }
             return allUsers;
         } catch (SQLException ex) {
@@ -282,8 +445,13 @@ public class Database {
         return new User[0];
     }
     
-    public static void updateUser(User updatedUser) /*Done*/
+    /**
+     * Takes a user and stores changes(if they exist) in the database.
+     * @param updatedUser 
+     */
+    public static void updateUser(User updatedUser) /*Done*/ /*Done*/
     {
+        User encryptedUpdatedUser = Encryption.encryptUser(updatedUser);
         try {
             Statement state = getStatement();
             String contacts = "";
@@ -304,24 +472,32 @@ public class Database {
                 admin = 1;
             }    
             String query = "update user"
-                    + " set username='"+updatedUser.getUsername()+"', email='"+updatedUser.getEmail()+"', password='"+updatedUser.getPassword()+"',friends='"+contacts+"',admin="+admin
-                    +" where ID="+updatedUser.getId();
+                    + " set username='"+encryptedUpdatedUser.getUsername()+"', email='"+encryptedUpdatedUser.getEmail()+"', password='"+encryptedUpdatedUser.getPassword()+"',friends='"+contacts+"',admin="+admin
+                    +" where ID="+encryptedUpdatedUser.getId();
             state.executeUpdate(query);
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
-    public static boolean verifyLogin(String login, String password)/*Done*/
+    /**
+     * Takes the login information and compares them to the database. 
+     * If the exist true is returned, else false. The "login" attrebute can
+     * contain either a email address or a username.
+     * @param login
+     * @param password
+     * @return 
+     */
+    public static boolean verifyLogin(String login, String password) /*Done*/ /*Done*/
     {
         Boolean logginDataVerified = false;
         int loginVerified = 0;
-        
+        String encryptedLogin = Encryption.encrypt(login);
         try {
             String query1 = "select count(*) from user "
-                    + "where username='"+login+"'";
+                    + "where username='"+encryptedLogin+"'";
             String query2 = "select count(*) from user "
-                    + "where email='"+login+"'";
+                    + "where email='"+encryptedLogin+"'";
             Statement state = getStatement();
             ResultSet Rs1 = state.executeQuery(query1);
             if(Rs1.next())
@@ -367,8 +543,15 @@ public class Database {
         }
         return logginDataVerified;
     }
+    /*Contacts*/
     
-    public static void addContact(User loggedin, User contact) /*Done*/
+    /**
+     * Adds a contact to the users(loggedin) account. The changes get stored in the
+     * database.
+     * @param loggedin
+     * @param contact 
+     */
+    public static void addContact(User loggedin, User contact) /*Done*/ /*Done*/
     {
         if(loggedin.getContactIDs()[0] != 0)
         {
@@ -389,7 +572,13 @@ public class Database {
         updateUser(loggedin);
     }
     
-    public static void deleteContact(User loggedin, User unfriend) /*Done*/
+    /**
+     * Deletes a contact from the users(loggedin) account.
+     * The changes get stored in the database.
+     * @param loggedin
+     * @param unfriend 
+     */
+    public static void deleteContact(User loggedin, User unfriend) /*Done*/ /*Done*/
     {
         if(loggedin.getContactIDs().length==1)
         {
@@ -418,7 +607,13 @@ public class Database {
         Database.updateUser(loggedin);
     }
     
-    public static User[] loadContacts(User loggedin) /*Done*/
+    /**
+     * Loads the accounts of all contacts of a user. The accounts get returned as a 
+     * user object array.
+     * @param loggedin
+     * @return 
+     */
+    public static User[] loadContacts(User loggedin) /*Done*/ /*Done*/
     {
         User[] friends = new User[0];
         if(loggedin.getContactIDs()[0] != 0)
@@ -427,6 +622,7 @@ public class Database {
             for(int i = 0;i<loggedin.getContactIDs().length;i++)
             {
                 friends[i] = loadUser(loggedin.getContactIDs()[i]);
+                friends[i] = Encryption.decryptUser(friends[i]);
             }
         }
         return friends;
@@ -435,7 +631,14 @@ public class Database {
 /*______________________________________________________*/
 /* Event management*/
 
-    public static Event[] sortEvents(Event[] events, Boolean reverse) /*Done*/
+    /**
+     * Sorts and returns Event object array by date. If revwerse is true the 
+     * array is sorted in reversed order.
+     * @param events
+     * @param reverse
+     * @return 
+     */
+    public static Event[] sortEvents(Event[] events, Boolean reverse) /*Done*//*Done*/
     {
         long[] dates = new long[events.length];
         for(int i = 0;i<dates.length;i++)
@@ -485,25 +688,30 @@ public class Database {
         return sortedEvents;
     }
     
-    public static void storeNewEvent(Event newEvent) /*Done*/
+    /**
+     * Takes a event object and stores its contants in the database.
+     * @param newEvent 
+     */
+    public static void storeNewEvent(Event newEvent) /*Done*/ /*Done*/ /*Done*/
     {
+        Event encryptedNewEvent = Encryption.encryptEvent(newEvent);
         String participants = "";
-        for(int i = 0;i<newEvent.getParticipantIDs().length;i++)
+        for(int i = 0;i<encryptedNewEvent.getParticipantIDs().length;i++)
             {
                 if(participants.equals(""))
                 {
-                    participants = Integer.toString(newEvent.getParticipantIDs()[i]);
+                    participants = Integer.toString(encryptedNewEvent.getParticipantIDs()[i]);
                 }
                 else
                 {
-                    participants = participants + "," + Integer.toString(newEvent.getParticipantIDs()[i]);
+                    participants = participants + "," + Integer.toString(encryptedNewEvent.getParticipantIDs()[i]);
                 }
             }
         String query = "Insert into event "
-                + " (ownerID, title, street, city, date, duration, notification, participantsID, priority) "
-                + " values ("+newEvent.getOwnerID()+", '"+newEvent.getTitle()+"','"+newEvent.getAddress()[0]
-                +"','"+newEvent.getAddress()[1]+"','"+convertDate(newEvent.getDate())+"','"+newEvent.getDuration()+"',"
-                +newEvent.getNotification()+",'"+participants+"',"+newEvent.getPriority()+") ";
+                + " (ownerID, title, street, city, date, duration, notification, participantsID, priority, attachment) "
+                + " values ("+encryptedNewEvent.getOwnerID()+", '"+encryptedNewEvent.getTitle()+"','"+encryptedNewEvent.getAddress()[0]
+                +"','"+encryptedNewEvent.getAddress()[1]+"','"+convertDate(encryptedNewEvent.getDate())+"','"+encryptedNewEvent.getDuration()+"',"
+                +encryptedNewEvent.getNotification()+",'"+participants+"',"+encryptedNewEvent.getPriority()+",'"+convertPath(newEvent.getAttachments())+"') ";
         try
         {
             Statement state = getStatement();
@@ -513,7 +721,11 @@ public class Database {
         }
     }
     
-    public static Event[] loadAllEvents() /*Done*/
+    /**
+     * Loads all events from the database and returns them as a Event object array.
+     * @return 
+     */
+    public static Event[] loadAllEvents() /*Done*/ /*Done*/ /*Done*/
     {
         Event[] allEvents = new Event[0];
         try {
@@ -543,7 +755,11 @@ public class Database {
                     participants[j] = Integer.parseInt(members[j]);
                 }
                 
-                allEvents[i] = new Event(Rs2.getInt("ID"),Rs2.getString("title"),address,convertDate(Rs2.getString("date")),Rs2.getString("duration"),participants,Rs2.getInt("notification"),Rs2.getInt("priority"),Rs2.getInt("ownerID"));
+                allEvents[i] = new Event(Rs2.getInt("ID"),Rs2.getString("title"),address,convertDate(Rs2.getString("date")),Rs2.getString("duration"),participants,Rs2.getInt("notification"),Rs2.getInt("priority"),Rs2.getInt("ownerID"),convertPath(Rs2.getString("attachment")));
+                if(allEvents[i].getTitle()!=null)
+                {
+                    allEvents[i] = Encryption.decryptEvent(allEvents[i]);
+                }        
             }
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
@@ -551,7 +767,13 @@ public class Database {
         return allEvents;
     }
     
-    public static Event[] loadUserEvents(int userID) /*Done*/
+    /**
+     * Loads the events of a user from the database and returns them as 
+     * a Event object array.
+     * @param userID
+     * @return 
+     */
+    public static Event[] loadUserEvents(int userID) /*Done*/ /*Done*/ /*Done*/
     {
         
         String query = "select count(*) from event where ownerID="+userID;
@@ -581,8 +803,11 @@ public class Database {
                 {
                     participants[j] = Integer.parseInt(members[j]);
                 }
-                
-                allEvents[i] = new Event(rC.getInt("ID"),rC.getString("title"),address,convertDate(rC.getString("date")),rC.getString("duration"),participants,rC.getInt("notification"),rC.getInt("priority"),rC.getInt("ownerID"));
+                allEvents[i] = new Event(rC.getInt("ID"),rC.getString("title"),address,convertDate(rC.getString("date")),rC.getString("duration"),participants,rC.getInt("notification"),rC.getInt("priority"),rC.getInt("ownerID"),convertPath(rC.getString("attachment")));
+                if(allEvents[i].getTitle()!=null)
+                {
+                    allEvents[i] = Encryption.decryptEvent(allEvents[i]);
+                }        
             }
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
@@ -590,7 +815,13 @@ public class Database {
         return allEvents;
     }
     
-    public static Event[] loadUserEventsThisWeek(int userID) /*Done*/
+    /**
+     * Load all events of a user which take place in the current week.
+     * The events get returned as a Event object array.
+     * @param userID
+     * @return 
+     */
+    public static Event[] loadUserEventsThisWeek(int userID) /*Done*/ /*Done*/
     {
         Event[] allEvents = loadUserEvents(userID);
         Date[] weekStartEnd = determineWeek();
@@ -615,8 +846,17 @@ public class Database {
         return weekEvents;
     }
 
-    public static void deleteEvent(Event event) /*Done*/
+    /**
+     * Deletes a Event from the database.
+     * @param event 
+     */
+    public static void deleteEvent(Event event) /*Done*/ /*Done*/ /*Done*/
     {
+        for(int i = 0;i<event.getAttachments().length;i++)
+        {
+            Event.deleteFile(event.getAttachments()[i]);
+        }
+        
         try {
             String query = "delete from event where ID="+event.getId();
             Statement state = getStatement();
@@ -626,7 +866,10 @@ public class Database {
         }
     }
     
-    public static void deleteOldEvents() /*Done*/
+    /**
+     * Deletes all events which are older than one hour.
+     */
+    public static void deleteOldEvents() /*Done*/ /*Done*/
     {
         Date now = new Date();
         now.setHours(now.getHours()-1);
@@ -640,8 +883,13 @@ public class Database {
         }
     }
     
-    public static void UpdateEvent(Event editedEvent) /*Done*/
+    /**
+     * Takes a event and stores its changes(if they exist) in the database.
+     * @param editedEvent 
+     */
+    public static void UpdateEvent(Event editedEvent) /*Done*/ /*Done*/ /*Done*/
     {
+        Event encyptedEditedEvent = Encryption.encryptEvent(editedEvent);
         String participants = "";
         for(int i = 0;i<editedEvent.getParticipantIDs().length;i++)
         {
@@ -654,17 +902,32 @@ public class Database {
                 participants = participants +","+ Integer.toString(editedEvent.getParticipantIDs()[i]);
             }
         }
+        String attachments = "none";
+        
+        for(int i = 0;i<encyptedEditedEvent.getAttachments().length;i++)
+        {
+            if(attachments.equals("none"))
+            {
+                attachments = encyptedEditedEvent.getAttachments()[i];
+            }
+            else
+            {
+                attachments = attachments + "\\*" + encyptedEditedEvent.getAttachments()[i];
+            }
+        }
+        
         String query = " update event "
-                + " set title='"+editedEvent.getTitle()
-                +"', street='"+editedEvent.getAddress()[0]
-                +"', city='"+editedEvent.getAddress()[0]
-                +"', date='"+convertDate(editedEvent.getDate())
-                +"', duration='"+editedEvent.getDuration()
-                +"', notification="+editedEvent.getNotification()
+                + " set title='"+encyptedEditedEvent.getTitle()
+                +"', street='"+encyptedEditedEvent.getAddress()[0]
+                +"', city='"+encyptedEditedEvent.getAddress()[1]
+                +"', date='"+convertDate(encyptedEditedEvent.getDate())
+                +"', duration='"+encyptedEditedEvent.getDuration()
+                +"', notification="+encyptedEditedEvent.getNotification()
                 +", participantsID='"+participants
-                +"', priority="+editedEvent.getPriority()
-                +", ownerID="+editedEvent.getOwnerID()
-                +" where ID="+editedEvent.getId()+"";
+                +"', priority="+encyptedEditedEvent.getPriority()
+                +", ownerID="+encyptedEditedEvent.getOwnerID()
+                +", attachment='"+convertPath(encyptedEditedEvent.getAttachments())
+                +"' where ID="+encyptedEditedEvent.getId()+"";
         try {    
             Statement state = getStatement();
             state.executeUpdate(query);
@@ -672,45 +935,95 @@ public class Database {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+      
     /*______________________________________________________*/
     /*Notification Service*/
     
-    public static Notification eventToNoti(Event event) /*Done*/
-    {
+    /**
+     * Converts a Event object into a Notification object. 
+     * Also loads additional data from the database.
+     * Returns a notification object.
+     * @param event
+     * @return 
+     */
+    public static Notification eventToNotification(Event event) /*Done*/ /*Done*/ /*Done*/
+     {
         User owner = loadUser(event.getOwnerID());
         String username = owner.getUsername();
         String useremail = owner.getEmail();
         String memberemail = "";
-        User participant = new User();
-        String[] participants = new String[event.getParticipantIDs().length];
-        for(int i = 0;i<event.getParticipantIDs().length;i++)
+        String[] participants;
+        if(event.getParticipantIDs().length==1&&event.getParticipantIDs()[0]==0)
         {
-            participant = loadUser(event.getParticipantIDs()[i]);
-            if(memberemail.equals(""))
+            participants = new String[1];
+            participants[0] = "none";
+            memberemail = "none";
+        }
+        else
+        {    
+        User participant = new User();
+        participants = new String[event.getParticipantIDs().length];
+        
+            for(int i = 0;i<event.getParticipantIDs().length;i++)
             {
-                memberemail = participant.getEmail();
-                participants[i] = participant.getUsername();
-            }
-            else
-            {
-                memberemail = memberemail +","+ participant.getEmail();
-                participants[i] = participant.getUsername();
+                participant = loadUser(event.getParticipantIDs()[i]);
+                if(memberemail.equals(""))
+                {
+                    memberemail = participant.getEmail();
+                    participants[i] = participant.getUsername();
+                }
+                else 
+                {
+                    memberemail = memberemail +","+ participant.getEmail();
+                    participants[i] = participant.getUsername();
+                }
             }
         }
-        
         Notification note = new Notification(username,useremail,memberemail,event.getTitle(),participants,event.getAddress(),event.getNotification(),event.getDate(),event.getDuration(),event.getPriority());
         return note;
     }
 
-    public static Notification[] loadNotifications() /*Done*/
+    /**
+     * Loads all events from the database and converts them to Notification objects.
+     * Returns a Notification object array.
+     * @return 
+     */
+    public static Notification[] loadNotifications() /*Done*/ /*Done*/
     {
         Event[] allEvents = loadAllEvents();
-        Notification[] notes = new Notification[allEvents.length];
-        for(int i = 0;i<notes.length;i++)
+        Notification[] notifications = new Notification[allEvents.length];
+        for(int i = 0;i<notifications.length;i++)
         {
-            notes[i] = eventToNoti(allEvents[i]);
+            notifications[i] = eventToNotification(allEvents[i]);
         }
-        return notes;
+        return notifications;
+    }
+    
+    /**
+     * Loads the login information for the notification email host and
+     * returns them as a string array.
+     * @return 
+     */
+    public static String[] getLogin() /*Done*/
+    {
+        String[] login = new String[4];
+        try {
+            
+            String query = "select * from maildata"
+                    + " where ID=1 ";
+            
+            Statement state = getStatement();
+            ResultSet Rs = state.executeQuery(query);
+            if(Rs.next())
+            {
+                login[0] = Rs.getString("email");
+                login[1] = Rs.getString("password");
+                login[2] = Rs.getString("host");
+                login[3] = Rs.getString("port");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return login;
     }
 }
