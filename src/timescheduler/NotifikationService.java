@@ -1,7 +1,7 @@
-  /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ /**
+ * Create by Marlon Ringel, 1314614
+ * Java WiSe 2020/21 Project
+ * 
  */
 package timescheduler;
 
@@ -104,10 +104,15 @@ public class NotifikationService implements Runnable
             address = address + notification.getEventAddress()[i] + "\n";
         }
         String members = notification.getUsername() + "\n";
-        for(int i = 0;i<notification.getEventMembers().length;i++)
+        
+        if (!notification.getEventMembers()[0].equals("none")) 
         {
-            members = members + notification.getEventMembers()[i] + "\n";
+            for(int i = 0;i<notification.getEventMembers().length;i++)
+            {
+                members = members + notification.getEventMembers()[i] + "\n";
+            }
         }
+        
         String priority;
         switch(notification.getPriority())
         {
@@ -330,20 +335,13 @@ public class NotifikationService implements Runnable
     */
     @Override public void run()
     {
-        System.out.println("LÄUFT!");
         while(exit)
         {
             Date now = getNow();
             if(now.compareTo(last)>0)
             {
-                System.out.println("LÄUFFT AUCH");
                 Database.deleteOldEvents();
                 Notification[] all = Database.loadNotifications();
-                
-                for (int i = 0; i < all.length; i++) 
-                {
-                    all[i].print();
-                }
                 compareAndSend(all, now);
                 last = now;
                 

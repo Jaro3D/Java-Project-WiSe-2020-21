@@ -11,6 +11,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  *
@@ -1025,5 +1027,45 @@ public class Database {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
         return login;
+    }
+    
+    /**
+     * This method saves data from the database into a list for displaying purposes.
+     * @param userID is the ID of the current user 
+     */
+    public static java.util.List DBtoTxt(int userID){
+        List data = new ArrayList();
+        System.out.println("SAVING TEXT");
+            try
+            {
+                String query = "select * from event where ownerID="+ userID +" order by priority desc, date asc";
+                Statement state = getStatement();
+                ResultSet rC = state.executeQuery(query);
+                
+                while(rC.next()){                   
+                    String[] members = rC.getString("participantsID").split(",");
+                    int[] participants = new int[members.length];
+                    for(int j = 0;j<members.length;j++)
+                    {
+                    participants[j] = Integer.parseInt(members[j]);
+                    }
+                    data.add(String.valueOf(rC.getInt("ID")));
+                    data.add(String.valueOf(rC.getInt("ownerID")));
+                    data.add(rC.getString("title"));
+                    data.add(rC.getString("street"));
+                    data.add(rC.getString("city"));
+                    data.add(String.valueOf(rC.getDate("date")));
+                    data.add(rC.getString("duration"));
+                    data.add(String.valueOf(rC.getInt("notification")));
+                    data.add(String.valueOf(rC.getInt("priority")));
+                    data.add(String.valueOf(members.length));
+                    
+                }
+            }
+            catch (Exception e) 
+            {
+                    System.out.println(e);
+            }
+            return data;
     }
 }
