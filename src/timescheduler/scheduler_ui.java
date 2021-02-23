@@ -1,22 +1,48 @@
+/**
+ * Create by Iaroslav Goncharuk, 1302419
+ * Java WiSe 2020/21 Project
+ * 
+ */
+
 package timescheduler;
 
 import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.Frame;
+import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Date;
+import javax.swing.DefaultListModel;
+import javax.swing.JLabel;
 
 /**
- *
+ * 
+ * This is the main of the application
+ * 
  * @author Jaro
  */
 public class scheduler_ui extends javax.swing.JFrame {
+    User currentUser;
+    User editedUser;
+    Event currentEvent;
+    String filePath = "";
     int mousePosX;
     int mousePosY;
+    int buttonIndex = 0;
+    int[] participantIDs = new int[0];
     boolean passNotVisible = false;
     boolean searchActive = false;
     boolean appEdited = false;
     boolean partEdited = false;
-    int buttonIndex = 0;
+    boolean isAdmin = false;
+    boolean adminEdit = false;
     
     public scheduler_ui() {
+        Thread notifikationService = new Thread(new NotifikationService());
+        notifikationService.start();
         initComponents();
         initBasics();
     }
@@ -24,6 +50,7 @@ public class scheduler_ui extends javax.swing.JFrame {
     public void initBasics()
     {
         nameInput.setBackground(new java.awt.Color(0,0,0,0));
+        emailInput.setBackground(new java.awt.Color(0,0,0,0));
         passwordInput.setBackground(new java.awt.Color(0,0,0,0));
         passwordConfInput.setBackground(new java.awt.Color(0,0,0,0));
         upperPanel.setBackground(new java.awt.Color(0,0,0,0));
@@ -41,14 +68,10 @@ public class scheduler_ui extends javax.swing.JFrame {
         editButton.setBackground(new java.awt.Color(0,0,0,0));
         saveButton.setBackground(new java.awt.Color(0,0,0,0));
         cancelDataEdit.setBackground(new java.awt.Color(0,0,0,0));
-        searchField.setBackground(new java.awt.Color(0,0,0,0));
-        searchButton.setBackground(new java.awt.Color(0,0,0,0));
-        addButton.setBackground(new java.awt.Color(0,0,0,0));
-        removeButton.setBackground(new java.awt.Color(0,0,0,0));
-        firstNameEdit.setBackground(new java.awt.Color(0,0,0,0));
-        lastNameEdit.setBackground(new java.awt.Color(0,0,0,0));
-        occupationEdit.setBackground(new java.awt.Color(0,0,0,0));
+        adminEditButton.setBackground(new java.awt.Color(0,0,0,0));
+        usernameEdit.setBackground(new java.awt.Color(0,0,0,0));
         mailEdit.setBackground(new java.awt.Color(0,0,0,0));
+        passwordEdit.setBackground(new java.awt.Color(0,0,0,0));
         appAddButton.setBackground(new java.awt.Color(0,0,0,0));
         appEditButton.setBackground(new java.awt.Color(0,0,0,0));
         appRemoveButton.setBackground(new java.awt.Color(0,0,0,0));
@@ -58,12 +81,13 @@ public class scheduler_ui extends javax.swing.JFrame {
         passwordConfInput.setEchoChar((char)0);
         passwordConfInput.setEchoChar((char)0);
         LoginMenu();
-        SearchActive();
         AppEdit();
     }
     
-    //EDITING APPOINTMENTS ON CALENDER SCREEN
-    private void AppEdit()
+    /**
+     * Checks if the addplication is beeing managed
+     */
+    public void AppEdit()
     {
         if (appEdited) //Appointment editing screen
         {
@@ -72,6 +96,7 @@ public class scheduler_ui extends javax.swing.JFrame {
             appAddButton.setVisible(false);
             addLabel.setText("Modify appointment");
             partEditButton.setVisible(true);
+            openFileButton.setVisible(true);
             if (partEdited) //Participants list opened
             {
                 appPartPanel.setVisible(true);
@@ -94,6 +119,7 @@ public class scheduler_ui extends javax.swing.JFrame {
             addLabel.setText("Add new appointment");
             appPartPanel.setVisible(false);
             appDisplayPanel.setVisible(true);
+            openFileButton.setVisible(false);
             if (partEdited) //Participants list opened
             {
                 appPartPanel.setVisible(true);
@@ -110,7 +136,9 @@ public class scheduler_ui extends javax.swing.JFrame {
             
     }
     
-    //SWITCHING BACKGROUNDS
+    /**
+     * Switches background initializes displayed information
+     */
     private void CheckButtonIndex()
     {
         switch(buttonIndex) 
@@ -119,7 +147,9 @@ public class scheduler_ui extends javax.swing.JFrame {
             bgLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/OnTime_BG.png")));
             break;
         case 1: //Dashboard
+            RecentEvents();
             DataOverviewMenu();
+            currentEvent = null;
             mainMenu.setSelectedIndex(0);
             bgLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/OnTime_BG_Home.png")));
             homeButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/HomeButton_over.png")));
@@ -132,13 +162,17 @@ public class scheduler_ui extends javax.swing.JFrame {
             calenderButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/CalenderButton_over.png")));
             homeButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/HomeButton.png")));
             profilesButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/ProfilesButton.png")));
+            LoadEventsToList();
             break;
         case 3: //Contacts and profile screen
+            LoadUserDetails();
+            currentEvent = null;
             mainMenu.setSelectedIndex(2);
             bgLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/OnTime_BG_Profiles.png")));
             profilesButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/ProfilesButton_over.png")));
             homeButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/HomeButton.png")));
             calenderButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/CalenderButton.png")));
+            friendsList.setModel(UsersToList(Database.loadAllUsers(), false));
             break;
         default:
           // code block
@@ -146,42 +180,452 @@ public class scheduler_ui extends javax.swing.JFrame {
         }
     }
     
-    //CONTACTS SCREEN SEARCH BAR
-    private void SearchActive()
+    /**
+     * Loading all events from database to a DafaultListModel on the appointment screen
+     */
+    private void LoadEventsToList()
     {
-        if (searchActive) //Search bar enabled
+        int listLength = 0;
+        int i = 0;
+        String listElement = "";
+        Event[] events = {};
+        events = GetAllSortedEvents();
+        listLength = events.length;
+        
+        DefaultListModel AppointmentList = new DefaultListModel();
+        
+        while(i <= (listLength - 1))
         {
-            serachBG.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/SearchField.png")));
-            searchField.setVisible(true);
-            addButton.setVisible(true);
-            removeButton.setVisible(false);
-            friednsLabel.setText("Users found:");
+            if (events[i].getDate().getDate() < 10) 
+            {
+                listElement = "0" + events[i].getDate().getDate() + ".";
+            }
+            else
+            {
+                listElement = events[i].getDate().getDate() + ".";
+            }
+            
+            if ((events[i].getDate().getMonth() + 1) < 10) 
+            {
+                listElement = listElement + "0" + (events[i].getDate().getMonth() + 1) + ".";
+            }
+            else
+            {
+                listElement = listElement + (events[i].getDate().getMonth() + 1) + ".";
+            }
+            
+            listElement = listElement + (events[i].getDate().getYear() + 1900) + " ";
+            
+            if (events[i].getDate().getHours() < 10) 
+            {
+                listElement = listElement + "0" + events[i].getDate().getHours() + ":";
+            }
+            else
+            {
+                listElement = listElement + events[i].getDate().getHours() + ":";
+            }
+            
+            if (events[i].getDate().getMinutes() < 10) 
+            {
+                listElement = listElement + "0" + events[i].getDate().getMinutes() + " ";
+            }
+            else
+            {
+                listElement = listElement + events[i].getDate().getMinutes() + " ";
+            }
+            
+            listElement = listElement + events[i].getTitle();
+            
+            AppointmentList.addElement(listElement);
+            i++;
         }
-        else //Searchbar disabled
+        
+        appList.setModel(AppointmentList);
+    }
+    
+    /**
+     * Loading all events from database and sorting it
+     * @return a sorted event list
+     */
+    private Event[] GetAllSortedEvents()
+    {
+        Event[] events = {};
+        events = Database.loadUserEvents(currentUser.getId());
+        events = Database.sortEvents(events, true);
+        
+        return events;
+    }
+    
+    /**
+     * Converts a user array to a list
+     * 
+     * @param users Users array you want to  convert
+     * @param withSelf With or without the own username
+     * @return List model for a list
+     */
+    private DefaultListModel UsersToList(User[] users, boolean withSelf)
+    {
+        int listLength = 0;
+        int i = 0;
+        String listElement = "";
+        users = Database.loadAllUsers();
+        listLength = users.length;
+        
+        DefaultListModel UsersList = new DefaultListModel();
+        
+        while(i <= (listLength - 1))
         {
-            serachBG.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/SearchField_closed.png")));
-            searchField.setVisible(false);
-            addButton.setVisible(false);
-            removeButton.setVisible(true);
-            friednsLabel.setText("Your contacts:");
+            listElement = users[i].getUsername();
+            
+            if (withSelf) 
+            {
+                UsersList.addElement(listElement);
+            }
+            else
+            {
+                if (!currentUser.getUsername().equals(users[i].getUsername())) 
+                {
+                    UsersList.addElement(listElement);
+                }
+            }
+            
+            i++;
+        }
+        
+        return UsersList;
+    }
+    
+    /**
+     * Converts ID array to a DafaultListModel
+     * @param IDs The IDs you want to convert
+     * @return A DafaultListModel for a list.
+     */
+    private DefaultListModel IDsToList(int[] IDs)
+    {
+        DefaultListModel UsersList = new DefaultListModel();
+        String listElement = "";
+        
+        for (int i = 0; i < IDs.length; i++) 
+        {
+            User tempUser = Database.loadUser(IDs[i]);
+            listElement = tempUser.getUsername();
+            UsersList.addElement(listElement);
+        }
+        
+        return UsersList;
+    }
+    
+    /**
+     * Loads the first three recent events on the dashboard
+     */
+    private void RecentEvents()
+    {
+        Event[] events = {};
+        events = Database.loadUserEvents(currentUser.getId());
+        events = Database.sortEvents(events, true);
+        int eventLength = events.length;
+        
+        switch(eventLength)
+        {
+            case 0:
+                HideAllEvents();
+                break;
+            case 1:
+                LoadFirstEvent(events[0]);
+                tilePanel_1.setVisible(true);
+                tilePanel_2.setVisible(false);
+                tilePanel_3.setVisible(false);
+                break;
+            case 2:
+                LoadFirstEvent(events[0]);
+                LoadSecondEvent(events[1]);
+                tilePanel_1.setVisible(true);
+                tilePanel_2.setVisible(true);
+                tilePanel_3.setVisible(false);
+                break;
+            default:
+                LoadFirstEvent(events[0]);
+                LoadSecondEvent(events[1]);
+                LoadThridEvent(events[2]);
+                tilePanel_1.setVisible(true);
+                tilePanel_2.setVisible(true);
+                tilePanel_3.setVisible(true);
+                break;
         }
     }
     
-    //ENABLE PROFILE DATA EDIT
+    /**
+     * Needed for RecentEvents(), hides all events
+     */
+    private void HideAllEvents()
+    {
+        tilePanel_1.setVisible(false);
+        tilePanel_2.setVisible(false);
+        tilePanel_3.setVisible(false);
+    }
+    
+    /**
+     * Needed for RecentEvents(), loads first event tile
+     * @param event The event you want to load
+     */
+    private void LoadFirstEvent(Event event)
+    {
+        tile_1_name.setText(event.getTitle());
+        tile_1_duration.setText(TimeConverter(event));
+        tile_1_location_street.setText(event.getAddress()[0]);
+        tile_1_location_city.setText(event.getAddress()[1]);
+        tile_1_participants_amount.setText(String.valueOf(event.getParticipantIDs().length));
+        tile_1_date.setText(String.valueOf(event.getDate().getDate()));
+        tile_1_month.setText(MonthConverter(event));
+        SetPriority(event, tile_1);
+    }
+    
+    /**
+     * Needed for RecentEvents(), loads second event tile
+     * @param event The event you want to load
+     */
+    private void LoadSecondEvent(Event event)
+    {
+        tile_2_name.setText(event.getTitle());
+        tile_2_duration.setText(TimeConverter(event));
+        tile_2_location_street.setText(event.getAddress()[0]);
+        tile_2_location_city.setText(event.getAddress()[1]);
+        tile_2_participants_amount.setText(String.valueOf(event.getParticipantIDs().length));
+        tile_2_date.setText(String.valueOf(event.getDate().getDate()));
+        tile_2_month.setText(MonthConverter(event));
+        SetPriority(event, tile_2);
+    }
+    
+    /**
+     * Needed for RecentEvents(), loads third event tile
+     * @param event The event you want to load
+     */
+    private void LoadThridEvent(Event event)
+    {
+        tile_3_name.setText(event.getTitle());
+        tile_3_duration.setText(TimeConverter(event));
+        tile_3_location_street.setText(event.getAddress()[0]);
+        tile_3_location_city.setText(event.getAddress()[1]);
+        tile_3_participants_amount.setText(String.valueOf(event.getParticipantIDs().length));
+        tile_3_date.setText(String.valueOf(event.getDate().getDate()));
+        tile_3_month.setText(MonthConverter(event));
+        SetPriority(event, tile_3);
+    }
+    
+    //DISPLAYS FULL EVENT DATA IN EDIT MODE
+    /**
+     * Displays the selected event in the event input
+     */
+    private void CurrentEditedEvent()
+    {   
+        if (appEdited == true) 
+        {
+            Event[] events = {};
+            events = GetAllSortedEvents();
+            int index;
+            index = appList.getSelectedIndex();
+            currentEvent = events[index];
+
+            nameEventInput.setText(currentEvent.getTitle());
+            dateEventInput.setDate(LocalDate.of(currentEvent.getDate().getYear() + 1900, 
+                                                currentEvent.getDate().getMonth() + 1, 
+                                                currentEvent.getDate().getDate()));
+            btimeEventInput.setTime(LocalTime.of(currentEvent.getDate().getHours(), 
+                                                 currentEvent.getDate().getMinutes()));
+            durationEventInput.setText(currentEvent.getDuration());
+            cityEventInput.setText(currentEvent.getAddress()[1]);
+            streetEventInput.setText(currentEvent.getAddress()[0]);
+            notifEventInput.setSelectedIndex(currentEvent.getNotification() - 1);
+            priorityEventInput.setSelectedIndex(currentEvent.getPriority() - 1);
+            participantIDs = currentEvent.getParticipantIDs();
+            partAddContactsList.setModel(IDsToList(participantIDs));
+        }
+        else
+        {
+            ClearEventInputData();
+        }
+    }
+    
+    /**
+     * Clears all event input text
+     */
+    private void ClearEventInputData()
+    {
+        nameEventInput.setText("");
+        dateEventInput.setText("");
+        btimeEventInput.setText("");
+        durationEventInput.setText("");
+        cityEventInput.setText("");
+        streetEventInput.setText("");
+        notifEventInput.setSelectedIndex(0);
+        priorityEventInput.setSelectedIndex(0);
+        currentEvent = null;
+        participantIDs = null;
+    }
+    
+    /**
+     * Sets the right background for every priority
+     * 1 = Low
+     * 2 = Medium
+     * 3 = High
+     * 
+     * @param event Gets priority of this event
+     * @param label Sets the background of that label
+     */
+    private void SetPriority(Event event, JLabel label)
+    {
+        switch(event.getPriority())
+        {
+            case 1:
+                label.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/greenTile.png")));
+                break;
+            case 2:
+                label.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/orangeTile.png")));
+                break;
+            case 3:
+                label.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/redTile.png")));
+                break;
+        }
+    }
+    
+    /**
+     * Converts month data from event to a short version of month
+     * 0 = Jan, 1 = Feb ...
+     * 
+     * @param event Uses that event data
+     * @return A string which contains the short month name
+     */
+    private String MonthConverter(Event event)
+    {
+        String month = "";
+        
+        switch(event.getDate().getMonth())
+        {
+            case 0:
+                month = "Jan";
+                break;
+            case 1:
+                month = "Feb";
+                break;
+            case 2:
+                month = "Mar";
+                break;
+            case 3:
+                month = "Apr";
+                break;
+            case 4:
+                month = "May";
+                break;
+            case 5:
+                month = "Jun";
+                break;
+            case 6:
+                month = "Jul";
+                break;
+            case 7:
+                month = "Aug";
+                break;
+            case 8:
+                month = "Sep";
+                break;
+            case 9:
+                month = "Oct";
+                break;
+            case 10:
+                month = "Nov";
+                break;
+            case 11:
+                month = "Dec";
+                break;
+        }
+        
+        return month;
+    }
+    
+    /**
+     * Converts time data from event to a right time format
+     * 00:00
+     * 
+     * @param event
+     * @return 
+     */
+    private String TimeConverter(Event event)
+    {
+        String time = "";
+        
+        if (event.getDate().getHours() < 10) 
+        {
+            time = "0" + String.valueOf(event.getDate().getHours()) + ":";
+        }
+        else
+        {
+            time = String.valueOf(event.getDate().getHours()) + ":";
+        }
+        
+        if (event.getDate().getMinutes() < 10) 
+        {
+            time += "0" + String.valueOf(event.getDate().getMinutes());
+        }
+        else
+        {
+            time += String.valueOf(event.getDate().getMinutes());
+        }
+        
+        return time;
+    }
+    
+    /**
+     * Loads user details on profile screen
+     */
+    private void LoadUserDetails()
+    {
+        usernameView.setText(currentUser.getUsername());
+        maiView.setText(currentUser.getEmail());
+    }
+    
+    /**
+     * Loads users data into input to be edited
+     */
+    private void LoadEditedUserData()
+    {
+        usernameEdit.setText(editedUser.getUsername());
+        mailEdit.setText(editedUser.getEmail());
+        passwordEdit.setText(editedUser.getPassword());
+    }
+    
+    /**
+     * Shows the user data edit screen, if user is admin, then he has more options
+     * Hides the user data display screen
+     */
     private void DataEditMenu()
     {
         dataOverview.setVisible(false);
         dataEdit.setVisible(true);
+        
+        if (!adminEdit) 
+        {
+            usernameEdit.setText("Edit username");
+            mailEdit.setText("Edit E-Mail address");
+            passwordEdit.setText("Edit password");
+            usernameEdit.setForeground(new Color(204,204,204));
+            mailEdit.setForeground(new Color(204,204,204));
+            passwordEdit.setForeground(new Color(204,204,204));
+        }
     }
     
-    //ENABLE PROFILE DATA DISPLAY
+    /**
+     * Shows user data display screen
+     * Hides the user data edit screen
+     */
     private void DataOverviewMenu()
     {
         dataEdit.setVisible(false);
         dataOverview.setVisible(true);
     }
     
-    //ENABLE LOGIN MENU
+    /**
+     * Enables the loginmenu, hides the sign up menu
+     */
     private void LoginMenu()
     {
         buttonIndex = 0;
@@ -191,20 +635,44 @@ public class scheduler_ui extends javax.swing.JFrame {
         passwordConfInput.setVisible(false);
         passwordConfUnderline.setVisible(false);
         goBackButton.setVisible(false);
+        emailInput.setVisible(false);
+        emailUnderline.setVisible(false);
+        userIcon.setLocation(590, 280);
+        nameInput.setLocation(650, 280);
+        nameUnderline.setLocation(640, 320);
+        passwordInput.setLocation(650, 360);
+        passwordUnderline.setLocation(640, 400);
+        nameInput.setText("Username");
+        passwordInput.setText("Password");
     }
     
-    //ENABLE REGISTRATION MENU
+    /**
+     * Enables the sign up menu, hides the login menu
+     */
     private void SignUpMenu()
     {
         signupButton.setVisible(false);
         loginButton.setVisible(false);
+        emailInput.setVisible(true);
+        emailUnderline.setVisible(true);
         caccButton.setVisible(true);
         passwordConfInput.setVisible(true);
         passwordConfUnderline.setVisible(true);
         goBackButton.setVisible(true);
+        userIcon.setLocation(590, 240);
+        nameInput.setLocation(650, 240);
+        nameUnderline.setLocation(640, 280);
+        passwordInput.setLocation(650, 360);
+        passwordUnderline.setLocation(640, 400);
+        nameInput.setText("Username");
+        emailInput.setText("E-Mail");
+        passwordInput.setText("Password");
+        passwordConfInput.setText("Confirm Password");
     }
     
-    //LOGIN AND REGISTRATION PASSWORT DISPLAY SETTINGS
+    /**
+     * Hides the passwort if wanted
+     */
     private void CheckVisibility()
     {
         if (passNotVisible) 
@@ -276,6 +744,8 @@ public class scheduler_ui extends javax.swing.JFrame {
         outputLabel = new javax.swing.JLabel();
         nameInput = new javax.swing.JTextField();
         nameUnderline = new javax.swing.JPanel();
+        emailInput = new javax.swing.JTextField();
+        emailUnderline = new javax.swing.JPanel();
         passwordInput = new javax.swing.JPasswordField();
         passwordUnderline = new javax.swing.JPanel();
         passwordConfInput = new javax.swing.JPasswordField();
@@ -288,6 +758,7 @@ public class scheduler_ui extends javax.swing.JFrame {
         caccButton = new javax.swing.JButton();
         mainPanel = new javax.swing.JPanel();
         miniLogo = new javax.swing.JLabel();
+        adminLogo = new javax.swing.JLabel();
         homeButton = new javax.swing.JButton();
         calenderButton = new javax.swing.JButton();
         profilesButton = new javax.swing.JButton();
@@ -339,7 +810,7 @@ public class scheduler_ui extends javax.swing.JFrame {
         btimeEventLabel = new javax.swing.JLabel();
         btimeEventInput = new com.github.lgooddatepicker.components.TimePicker();
         durationEventLabel = new javax.swing.JLabel();
-        duratonEventInput = new com.github.lgooddatepicker.components.TimePicker();
+        durationEventInput = new javax.swing.JTextField();
         cityEventLabel = new javax.swing.JLabel();
         cityEventInput = new javax.swing.JTextField();
         streetEventLabel = new javax.swing.JLabel();
@@ -349,6 +820,8 @@ public class scheduler_ui extends javax.swing.JFrame {
         nitifEventLabel = new javax.swing.JLabel();
         notifEventInput = new javax.swing.JComboBox<>();
         partEditButton = new javax.swing.JButton();
+        attachmentButton = new javax.swing.JButton();
+        openFileButton = new javax.swing.JButton();
         appPartPanel = new javax.swing.JPanel();
         yourContLabel = new javax.swing.JLabel();
         partContacts = new javax.swing.JScrollPane();
@@ -357,6 +830,7 @@ public class scheduler_ui extends javax.swing.JFrame {
         partAddContacts = new javax.swing.JScrollPane();
         partAddContactsList = new javax.swing.JList<>();
         partSaveButton = new javax.swing.JButton();
+        partAddButton = new javax.swing.JButton();
         appEditButton = new javax.swing.JButton();
         appExportButton = new javax.swing.JButton();
         appRemoveButton = new javax.swing.JButton();
@@ -371,31 +845,24 @@ public class scheduler_ui extends javax.swing.JFrame {
         editLabel = new javax.swing.JLabel();
         saveButton = new javax.swing.JButton();
         cancelDataEdit = new javax.swing.JButton();
-        firstNameEdit = new javax.swing.JTextField();
-        fistNameUnderline = new javax.swing.JPanel();
-        lastNameEdit = new javax.swing.JTextField();
-        lastNameUnderline = new javax.swing.JPanel();
-        occupationEdit = new javax.swing.JTextField();
-        occupationUnderline = new javax.swing.JPanel();
+        usernameEdit = new javax.swing.JTextField();
+        usernameUnderline = new javax.swing.JPanel();
         mailEdit = new javax.swing.JTextField();
         mailUnderline = new javax.swing.JPanel();
+        passwordEdit = new javax.swing.JTextField();
+        passUnderline = new javax.swing.JPanel();
         dataOverview = new javax.swing.JPanel();
         editButton = new javax.swing.JButton();
         userLogo = new javax.swing.JLabel();
-        nameView = new javax.swing.JLabel();
-        maiView = new javax.swing.JLabel();
-        occView = new javax.swing.JLabel();
+        adminView = new javax.swing.JLabel();
         usernameView = new javax.swing.JLabel();
+        maiView = new javax.swing.JLabel();
         userTile = new javax.swing.JLabel();
         friendsPanel = new javax.swing.JPanel();
-        searchButton = new javax.swing.JButton();
-        searchField = new javax.swing.JTextField();
-        serachBG = new javax.swing.JLabel();
         friednsLabel = new javax.swing.JLabel();
         friendsView = new javax.swing.JScrollPane();
         friendsList = new javax.swing.JList<>();
-        removeButton = new javax.swing.JButton();
-        addButton = new javax.swing.JButton();
+        adminEditButton = new javax.swing.JButton();
         friendsTile = new javax.swing.JLabel();
         bgLabel = new javax.swing.JLabel();
 
@@ -423,10 +890,10 @@ public class scheduler_ui extends javax.swing.JFrame {
         });
         upperPanel.setLayout(null);
 
-        exitButton.setBackground(new java.awt.Color(255, 255, 255));
-        exitButton.setForeground(new java.awt.Color(255, 255, 255));
         exitButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/Button.png"))); // NOI18N
+        exitButton.setBackground(new java.awt.Color(255, 255, 255));
         exitButton.setBorder(null);
+        exitButton.setForeground(new java.awt.Color(255, 255, 255));
         exitButton.setOpaque(false);
         exitButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/Button_pressed.png"))); // NOI18N
         exitButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/Button_over.png"))); // NOI18N
@@ -481,17 +948,17 @@ public class scheduler_ui extends javax.swing.JFrame {
         loginPanel.add(logoLabel);
         logoLabel.setBounds(660, 70, 250, 110);
 
-        outputLabel.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
-        outputLabel.setForeground(new java.awt.Color(255, 255, 255));
         outputLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         outputLabel.setText("Welcome!");
+        outputLabel.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        outputLabel.setForeground(new java.awt.Color(255, 255, 255));
         loginPanel.add(outputLabel);
-        outputLabel.setBounds(640, 200, 300, 40);
+        outputLabel.setBounds(640, 170, 300, 40);
 
         nameInput.setFont(new java.awt.Font("Tahoma", 0, 16)); // NOI18N
-        nameInput.setForeground(new java.awt.Color(51, 51, 51));
         nameInput.setText("Username");
         nameInput.setBorder(null);
+        nameInput.setForeground(new java.awt.Color(51, 51, 51));
         nameInput.setOpaque(false);
         nameInput.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
@@ -505,14 +972,58 @@ public class scheduler_ui extends javax.swing.JFrame {
         nameInput.setBounds(650, 280, 280, 40);
 
         nameUnderline.setBackground(new java.awt.Color(255, 255, 255));
+
+        javax.swing.GroupLayout nameUnderlineLayout = new javax.swing.GroupLayout(nameUnderline);
+        nameUnderline.setLayout(nameUnderlineLayout);
+        nameUnderlineLayout.setHorizontalGroup(
+            nameUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 300, Short.MAX_VALUE)
+        );
+        nameUnderlineLayout.setVerticalGroup(
+            nameUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 2, Short.MAX_VALUE)
+        );
+
         loginPanel.add(nameUnderline);
         nameUnderline.setBounds(640, 320, 300, 2);
 
+        emailInput.setFont(new java.awt.Font("Tahoma", 0, 16)); // NOI18N
+        emailInput.setText("E-Mail");
+        emailInput.setBorder(null);
+        emailInput.setForeground(new java.awt.Color(51, 51, 51));
+        emailInput.setOpaque(false);
+        emailInput.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                emailInputFocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                emailInputFocusLost(evt);
+            }
+        });
+        loginPanel.add(emailInput);
+        emailInput.setBounds(650, 300, 280, 40);
+
+        emailUnderline.setBackground(new java.awt.Color(255, 255, 255));
+
+        javax.swing.GroupLayout emailUnderlineLayout = new javax.swing.GroupLayout(emailUnderline);
+        emailUnderline.setLayout(emailUnderlineLayout);
+        emailUnderlineLayout.setHorizontalGroup(
+            emailUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 300, Short.MAX_VALUE)
+        );
+        emailUnderlineLayout.setVerticalGroup(
+            emailUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 2, Short.MAX_VALUE)
+        );
+
+        loginPanel.add(emailUnderline);
+        emailUnderline.setBounds(640, 340, 300, 2);
+
         passwordInput.setFont(new java.awt.Font("Tahoma", 0, 16)); // NOI18N
-        passwordInput.setForeground(new java.awt.Color(51, 51, 51));
         passwordInput.setText("Password");
         passwordInput.setBorder(null);
         passwordInput.setEchoChar('*');
+        passwordInput.setForeground(new java.awt.Color(51, 51, 51));
         passwordInput.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 passwordInputFocusGained(evt);
@@ -525,14 +1036,26 @@ public class scheduler_ui extends javax.swing.JFrame {
         passwordInput.setBounds(650, 360, 280, 40);
 
         passwordUnderline.setBackground(new java.awt.Color(255, 255, 255));
+
+        javax.swing.GroupLayout passwordUnderlineLayout = new javax.swing.GroupLayout(passwordUnderline);
+        passwordUnderline.setLayout(passwordUnderlineLayout);
+        passwordUnderlineLayout.setHorizontalGroup(
+            passwordUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 300, Short.MAX_VALUE)
+        );
+        passwordUnderlineLayout.setVerticalGroup(
+            passwordUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 2, Short.MAX_VALUE)
+        );
+
         loginPanel.add(passwordUnderline);
         passwordUnderline.setBounds(640, 400, 300, 2);
 
         passwordConfInput.setFont(new java.awt.Font("Tahoma", 0, 16)); // NOI18N
-        passwordConfInput.setForeground(new java.awt.Color(51, 51, 51));
         passwordConfInput.setText("Confirm Password");
         passwordConfInput.setBorder(null);
         passwordConfInput.setEchoChar('*');
+        passwordConfInput.setForeground(new java.awt.Color(51, 51, 51));
         passwordConfInput.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 passwordConfInputFocusGained(evt);
@@ -542,11 +1065,23 @@ public class scheduler_ui extends javax.swing.JFrame {
             }
         });
         loginPanel.add(passwordConfInput);
-        passwordConfInput.setBounds(650, 430, 280, 40);
+        passwordConfInput.setBounds(650, 420, 280, 40);
 
         passwordConfUnderline.setBackground(new java.awt.Color(255, 255, 255));
+
+        javax.swing.GroupLayout passwordConfUnderlineLayout = new javax.swing.GroupLayout(passwordConfUnderline);
+        passwordConfUnderline.setLayout(passwordConfUnderlineLayout);
+        passwordConfUnderlineLayout.setHorizontalGroup(
+            passwordConfUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 300, Short.MAX_VALUE)
+        );
+        passwordConfUnderlineLayout.setVerticalGroup(
+            passwordConfUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 2, Short.MAX_VALUE)
+        );
+
         loginPanel.add(passwordConfUnderline);
-        passwordConfUnderline.setBounds(640, 470, 300, 2);
+        passwordConfUnderline.setBounds(640, 460, 300, 2);
 
         passVisButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/Password_visible.png"))); // NOI18N
         passVisButton.setBorder(null);
@@ -561,11 +1096,11 @@ public class scheduler_ui extends javax.swing.JFrame {
 
         userIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/user.png"))); // NOI18N
         loginPanel.add(userIcon);
-        userIcon.setBounds(590, 290, 40, 40);
+        userIcon.setBounds(590, 280, 40, 40);
 
-        loginButton.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
         loginButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/LoginButton.png"))); // NOI18N
         loginButton.setBorder(null);
+        loginButton.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
         loginButton.setMargin(new java.awt.Insets(0, 0, 0, 0));
         loginButton.setOpaque(false);
         loginButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/LoginButton_pressed.png"))); // NOI18N
@@ -626,9 +1161,9 @@ public class scheduler_ui extends javax.swing.JFrame {
         loginPanel.add(signupButton);
         signupButton.setBounds(690, 520, 190, 15);
 
-        caccButton.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
         caccButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/SignUpButton.png"))); // NOI18N
         caccButton.setBorder(null);
+        caccButton.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
         caccButton.setMargin(new java.awt.Insets(0, 0, 0, 0));
         caccButton.setOpaque(false);
         caccButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/SignUpButton_pressed.png"))); // NOI18N
@@ -649,6 +1184,10 @@ public class scheduler_ui extends javax.swing.JFrame {
         miniLogo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/Logo_small.png"))); // NOI18N
         mainPanel.add(miniLogo);
         miniLogo.setBounds(10, 10, 150, 50);
+
+        adminLogo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/Admin.png"))); // NOI18N
+        mainPanel.add(adminLogo);
+        adminLogo.setBounds(10, 50, 90, 25);
 
         homeButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/HomeButton.png"))); // NOI18N
         homeButton.setBorder(null);
@@ -783,9 +1322,9 @@ public class scheduler_ui extends javax.swing.JFrame {
         tilePanel_2.setOpaque(false);
         tilePanel_2.setLayout(null);
 
+        tile_2_name.setText("Appointment 2");
         tile_2_name.setFont(new java.awt.Font("Tahoma", 1, 16)); // NOI18N
         tile_2_name.setForeground(new java.awt.Color(255, 255, 255));
-        tile_2_name.setText("Appointment 2");
         tilePanel_2.add(tile_2_name);
         tile_2_name.setBounds(20, 20, 160, 20);
 
@@ -867,9 +1406,9 @@ public class scheduler_ui extends javax.swing.JFrame {
         tilePanel_1.add(tile_1_participants_label);
         tile_1_participants_label.setBounds(20, 110, 80, 20);
 
+        tile_1_participants_amount.setText("3");
         tile_1_participants_amount.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         tile_1_participants_amount.setForeground(new java.awt.Color(255, 255, 255));
-        tile_1_participants_amount.setText("3");
         tilePanel_1.add(tile_1_participants_amount);
         tile_1_participants_amount.setBounds(100, 110, 50, 20);
 
@@ -879,17 +1418,17 @@ public class scheduler_ui extends javax.swing.JFrame {
         tilePanel_1.add(tile_1_location_city);
         tile_1_location_city.setBounds(20, 90, 160, 20);
 
-        tile_1_month.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
-        tile_1_month.setForeground(new java.awt.Color(153, 153, 153));
         tile_1_month.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         tile_1_month.setText("Oct");
+        tile_1_month.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
+        tile_1_month.setForeground(new java.awt.Color(153, 153, 153));
         tilePanel_1.add(tile_1_month);
         tile_1_month.setBounds(40, 202, 50, 20);
 
-        tile_1_date.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
-        tile_1_date.setForeground(new java.awt.Color(153, 153, 153));
         tile_1_date.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         tile_1_date.setText("28");
+        tile_1_date.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
+        tile_1_date.setForeground(new java.awt.Color(153, 153, 153));
         tilePanel_1.add(tile_1_date);
         tile_1_date.setBounds(40, 175, 50, 20);
 
@@ -934,8 +1473,12 @@ public class scheduler_ui extends javax.swing.JFrame {
         appList.setBackground(new java.awt.Color(224, 92, 109));
         appList.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         appList.setForeground(new java.awt.Color(255, 255, 255));
-        appList.setOpaque(false);
         appList.setSelectionBackground(new java.awt.Color(209, 80, 97));
+        appList.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
+                appListValueChanged(evt);
+            }
+        });
         listDisplay.setViewportView(appList);
 
         calenderPanel.add(listDisplay);
@@ -980,9 +1523,9 @@ public class scheduler_ui extends javax.swing.JFrame {
         appDisplayPanel.add(durationEventLabel);
         durationEventLabel.setBounds(120, 100, 95, 20);
 
-        duratonEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        appDisplayPanel.add(duratonEventInput);
-        duratonEventInput.setBounds(120, 120, 110, 30);
+        durationEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        appDisplayPanel.add(durationEventInput);
+        durationEventInput.setBounds(120, 120, 115, 30);
 
         cityEventLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         cityEventLabel.setForeground(new java.awt.Color(255, 255, 255));
@@ -1023,10 +1566,10 @@ public class scheduler_ui extends javax.swing.JFrame {
         appDisplayPanel.add(nitifEventLabel);
         nitifEventLabel.setBounds(0, 253, 80, 17);
 
-        notifEventInput.setBackground(new java.awt.Color(204, 0, 0));
-        notifEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         notifEventInput.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "1 week", "3 days", "1 hour", "10 minutes" }));
+        notifEventInput.setBackground(new java.awt.Color(204, 0, 0));
         notifEventInput.setBorder(null);
+        notifEventInput.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         appDisplayPanel.add(notifEventInput);
         notifEventInput.setBounds(0, 270, 110, 30);
 
@@ -1041,7 +1584,33 @@ public class scheduler_ui extends javax.swing.JFrame {
             }
         });
         appDisplayPanel.add(partEditButton);
-        partEditButton.setBounds(50, 315, 145, 30);
+        partEditButton.setBounds(0, 315, 145, 30);
+
+        attachmentButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/Attachment.png"))); // NOI18N
+        attachmentButton.setBorder(null);
+        attachmentButton.setOpaque(false);
+        attachmentButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/Attachment_pressed.png"))); // NOI18N
+        attachmentButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/Attachment_over.png"))); // NOI18N
+        attachmentButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                attachmentButtonActionPerformed(evt);
+            }
+        });
+        appDisplayPanel.add(attachmentButton);
+        attachmentButton.setBounds(205, 315, 30, 30);
+
+        openFileButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/OpenFile.png"))); // NOI18N
+        openFileButton.setBorder(null);
+        openFileButton.setOpaque(false);
+        openFileButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/OpenFile_pressed.png"))); // NOI18N
+        openFileButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/OpenFile_over.png"))); // NOI18N
+        openFileButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                openFileButtonActionPerformed(evt);
+            }
+        });
+        appDisplayPanel.add(openFileButton);
+        openFileButton.setBounds(165, 315, 30, 30);
 
         calenderPanel.add(appDisplayPanel);
         appDisplayPanel.setBounds(510, 50, 235, 350);
@@ -1049,9 +1618,9 @@ public class scheduler_ui extends javax.swing.JFrame {
         appPartPanel.setOpaque(false);
         appPartPanel.setLayout(null);
 
+        yourContLabel.setText("Your contacts:");
         yourContLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         yourContLabel.setForeground(new java.awt.Color(255, 255, 255));
-        yourContLabel.setText("Your contacts:");
         appPartPanel.add(yourContLabel);
         yourContLabel.setBounds(0, 0, 240, 20);
 
@@ -1069,17 +1638,12 @@ public class scheduler_ui extends javax.swing.JFrame {
         appPartPanel.add(partContacts);
         partContacts.setBounds(0, 20, 235, 100);
 
+        eventPartLabel.setText("Event participants:");
         eventPartLabel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         eventPartLabel.setForeground(new java.awt.Color(255, 255, 255));
-        eventPartLabel.setText("Event participants:");
         appPartPanel.add(eventPartLabel);
-        eventPartLabel.setBounds(0, 135, 240, 20);
+        eventPartLabel.setBounds(0, 160, 240, 20);
 
-        partAddContactsList.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Sullivan Hulme", "Halima Ellwood", "Koby Sinclair", "Milena Tierney", " " };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
         partAddContactsList.setBackground(new java.awt.Color(224, 92, 109));
         partAddContactsList.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         partAddContactsList.setForeground(new java.awt.Color(255, 255, 255));
@@ -1087,7 +1651,7 @@ public class scheduler_ui extends javax.swing.JFrame {
         partAddContacts.setViewportView(partAddContactsList);
 
         appPartPanel.add(partAddContacts);
-        partAddContacts.setBounds(0, 160, 235, 100);
+        partAddContacts.setBounds(0, 180, 235, 100);
 
         partSaveButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/PartSaveButton.png"))); // NOI18N
         partSaveButton.setBorder(null);
@@ -1101,6 +1665,19 @@ public class scheduler_ui extends javax.swing.JFrame {
         });
         appPartPanel.add(partSaveButton);
         partSaveButton.setBounds(80, 290, 70, 30);
+
+        partAddButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/PartAddButton.png"))); // NOI18N
+        partAddButton.setBorder(null);
+        partAddButton.setOpaque(false);
+        partAddButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/PartAddButton_pressed.png"))); // NOI18N
+        partAddButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/PartAddButton_over.png"))); // NOI18N
+        partAddButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                partAddButtonActionPerformed(evt);
+            }
+        });
+        appPartPanel.add(partAddButton);
+        partAddButton.setBounds(0, 120, 40, 40);
 
         calenderPanel.add(appPartPanel);
         appPartPanel.setBounds(510, 70, 235, 330);
@@ -1123,6 +1700,11 @@ public class scheduler_ui extends javax.swing.JFrame {
         appExportButton.setOpaque(false);
         appExportButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/ExportButton_pressed.png"))); // NOI18N
         appExportButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/ExportButton_over.png"))); // NOI18N
+        appExportButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                appExportButtonActionPerformed(evt);
+            }
+        });
         calenderPanel.add(appExportButton);
         appExportButton.setBounds(240, 400, 90, 40);
 
@@ -1131,6 +1713,11 @@ public class scheduler_ui extends javax.swing.JFrame {
         appRemoveButton.setOpaque(false);
         appRemoveButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/RemoveButton_pressed.png"))); // NOI18N
         appRemoveButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/RemoveButton_over.png"))); // NOI18N
+        appRemoveButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                appRemoveButtonActionPerformed(evt);
+            }
+        });
         calenderPanel.add(appRemoveButton);
         appRemoveButton.setBounds(338, 400, 90, 40);
 
@@ -1152,6 +1739,11 @@ public class scheduler_ui extends javax.swing.JFrame {
         appAddButton.setOpaque(false);
         appAddButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/AddButton_pressed.png"))); // NOI18N
         appAddButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/AddButton_over.png"))); // NOI18N
+        appAddButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                appAddButtonActionPerformed(evt);
+            }
+        });
         calenderPanel.add(appAddButton);
         appAddButton.setBounds(590, 410, 90, 40);
 
@@ -1198,10 +1790,10 @@ public class scheduler_ui extends javax.swing.JFrame {
         dataEdit.setOpaque(false);
         dataEdit.setLayout(null);
 
-        editLabel.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
-        editLabel.setForeground(new java.awt.Color(255, 255, 255));
         editLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         editLabel.setText("Edit your profile");
+        editLabel.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        editLabel.setForeground(new java.awt.Color(255, 255, 255));
         dataEdit.add(editLabel);
         editLabel.setBounds(95, 100, 150, 30);
 
@@ -1217,9 +1809,9 @@ public class scheduler_ui extends javax.swing.JFrame {
         dataEdit.add(saveButton);
         saveButton.setBounds(135, 370, 90, 40);
 
-        cancelDataEdit.setForeground(new java.awt.Color(255, 255, 255));
         cancelDataEdit.setText("Cancel");
         cancelDataEdit.setBorder(null);
+        cancelDataEdit.setForeground(new java.awt.Color(255, 255, 255));
         cancelDataEdit.setOpaque(false);
         cancelDataEdit.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -1240,106 +1832,42 @@ public class scheduler_ui extends javax.swing.JFrame {
         dataEdit.add(cancelDataEdit);
         cancelDataEdit.setBounds(125, 420, 110, 40);
 
-        firstNameEdit.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        firstNameEdit.setForeground(new java.awt.Color(204, 204, 204));
-        firstNameEdit.setText("Edit first name");
-        firstNameEdit.setBorder(null);
-        firstNameEdit.setOpaque(false);
-        firstNameEdit.addFocusListener(new java.awt.event.FocusAdapter() {
+        usernameEdit.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        usernameEdit.setForeground(new java.awt.Color(204, 204, 204));
+        usernameEdit.setText("Edit username");
+        usernameEdit.setBorder(null);
+        usernameEdit.setOpaque(false);
+        usernameEdit.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
-                firstNameEditFocusGained(evt);
+                usernameEditFocusGained(evt);
             }
             public void focusLost(java.awt.event.FocusEvent evt) {
-                firstNameEditFocusLost(evt);
+                usernameEditFocusLost(evt);
             }
         });
-        dataEdit.add(firstNameEdit);
-        firstNameEdit.setBounds(100, 170, 160, 30);
+        dataEdit.add(usernameEdit);
+        usernameEdit.setBounds(100, 220, 160, 30);
 
-        fistNameUnderline.setBackground(new java.awt.Color(255, 255, 255));
+        usernameUnderline.setBackground(new java.awt.Color(255, 255, 255));
 
-        javax.swing.GroupLayout fistNameUnderlineLayout = new javax.swing.GroupLayout(fistNameUnderline);
-        fistNameUnderline.setLayout(fistNameUnderlineLayout);
-        fistNameUnderlineLayout.setHorizontalGroup(
-            fistNameUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        javax.swing.GroupLayout usernameUnderlineLayout = new javax.swing.GroupLayout(usernameUnderline);
+        usernameUnderline.setLayout(usernameUnderlineLayout);
+        usernameUnderlineLayout.setHorizontalGroup(
+            usernameUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGap(0, 160, Short.MAX_VALUE)
         );
-        fistNameUnderlineLayout.setVerticalGroup(
-            fistNameUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        usernameUnderlineLayout.setVerticalGroup(
+            usernameUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGap(0, 2, Short.MAX_VALUE)
         );
 
-        dataEdit.add(fistNameUnderline);
-        fistNameUnderline.setBounds(100, 197, 160, 2);
-
-        lastNameEdit.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        lastNameEdit.setForeground(new java.awt.Color(204, 204, 204));
-        lastNameEdit.setText("Edit last name");
-        lastNameEdit.setBorder(null);
-        lastNameEdit.setOpaque(false);
-        lastNameEdit.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
-                lastNameEditFocusGained(evt);
-            }
-            public void focusLost(java.awt.event.FocusEvent evt) {
-                lastNameEditFocusLost(evt);
-            }
-        });
-        dataEdit.add(lastNameEdit);
-        lastNameEdit.setBounds(100, 210, 160, 30);
-
-        lastNameUnderline.setBackground(new java.awt.Color(255, 255, 255));
-
-        javax.swing.GroupLayout lastNameUnderlineLayout = new javax.swing.GroupLayout(lastNameUnderline);
-        lastNameUnderline.setLayout(lastNameUnderlineLayout);
-        lastNameUnderlineLayout.setHorizontalGroup(
-            lastNameUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 160, Short.MAX_VALUE)
-        );
-        lastNameUnderlineLayout.setVerticalGroup(
-            lastNameUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 2, Short.MAX_VALUE)
-        );
-
-        dataEdit.add(lastNameUnderline);
-        lastNameUnderline.setBounds(100, 237, 160, 2);
-
-        occupationEdit.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        occupationEdit.setForeground(new java.awt.Color(204, 204, 204));
-        occupationEdit.setText("Edit occupation");
-        occupationEdit.setBorder(null);
-        occupationEdit.setOpaque(false);
-        occupationEdit.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
-                occupationEditFocusGained(evt);
-            }
-            public void focusLost(java.awt.event.FocusEvent evt) {
-                occupationEditFocusLost(evt);
-            }
-        });
-        dataEdit.add(occupationEdit);
-        occupationEdit.setBounds(100, 250, 160, 30);
-
-        occupationUnderline.setBackground(new java.awt.Color(255, 255, 255));
-
-        javax.swing.GroupLayout occupationUnderlineLayout = new javax.swing.GroupLayout(occupationUnderline);
-        occupationUnderline.setLayout(occupationUnderlineLayout);
-        occupationUnderlineLayout.setHorizontalGroup(
-            occupationUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 160, Short.MAX_VALUE)
-        );
-        occupationUnderlineLayout.setVerticalGroup(
-            occupationUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 2, Short.MAX_VALUE)
-        );
-
-        dataEdit.add(occupationUnderline);
-        occupationUnderline.setBounds(100, 277, 160, 2);
+        dataEdit.add(usernameUnderline);
+        usernameUnderline.setBounds(100, 250, 160, 2);
 
         mailEdit.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        mailEdit.setForeground(new java.awt.Color(204, 204, 204));
         mailEdit.setText("Edit E-Mail address");
         mailEdit.setBorder(null);
+        mailEdit.setForeground(new java.awt.Color(204, 204, 204));
         mailEdit.setOpaque(false);
         mailEdit.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
@@ -1350,7 +1878,7 @@ public class scheduler_ui extends javax.swing.JFrame {
             }
         });
         dataEdit.add(mailEdit);
-        mailEdit.setBounds(100, 290, 160, 30);
+        mailEdit.setBounds(100, 260, 160, 30);
 
         mailUnderline.setBackground(new java.awt.Color(255, 255, 255));
 
@@ -1366,7 +1894,39 @@ public class scheduler_ui extends javax.swing.JFrame {
         );
 
         dataEdit.add(mailUnderline);
-        mailUnderline.setBounds(100, 317, 160, 2);
+        mailUnderline.setBounds(100, 290, 160, 2);
+
+        passwordEdit.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        passwordEdit.setForeground(new java.awt.Color(204, 204, 204));
+        passwordEdit.setText("Edit password");
+        passwordEdit.setBorder(null);
+        passwordEdit.setOpaque(false);
+        passwordEdit.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                passwordEditFocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                passwordEditFocusLost(evt);
+            }
+        });
+        dataEdit.add(passwordEdit);
+        passwordEdit.setBounds(100, 300, 160, 30);
+
+        passUnderline.setBackground(new java.awt.Color(255, 255, 255));
+
+        javax.swing.GroupLayout passUnderlineLayout = new javax.swing.GroupLayout(passUnderline);
+        passUnderline.setLayout(passUnderlineLayout);
+        passUnderlineLayout.setHorizontalGroup(
+            passUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 160, Short.MAX_VALUE)
+        );
+        passUnderlineLayout.setVerticalGroup(
+            passUnderlineLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 2, Short.MAX_VALUE)
+        );
+
+        dataEdit.add(passUnderline);
+        passUnderline.setBounds(100, 330, 160, 2);
 
         userProfilePanel.add(dataEdit);
         dataEdit.setBounds(0, 0, 400, 500);
@@ -1391,33 +1951,26 @@ public class scheduler_ui extends javax.swing.JFrame {
         dataOverview.add(userLogo);
         userLogo.setBounds(115, 60, 130, 128);
 
-        nameView.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        nameView.setForeground(new java.awt.Color(255, 255, 255));
-        nameView.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        nameView.setText("Name Surname");
-        dataOverview.add(nameView);
-        nameView.setBounds(48, 230, 260, 30);
+        adminView.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        adminView.setForeground(new java.awt.Color(255, 255, 255));
+        adminView.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        adminView.setText("Admin");
+        dataOverview.add(adminView);
+        adminView.setBounds(50, 200, 260, 30);
 
-        maiView.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        maiView.setForeground(new java.awt.Color(255, 255, 255));
-        maiView.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        maiView.setText("namesurname@gmail.com");
-        dataOverview.add(maiView);
-        maiView.setBounds(48, 290, 260, 30);
-
-        occView.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        occView.setForeground(new java.awt.Color(255, 255, 255));
-        occView.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        occView.setText("Occupation");
-        dataOverview.add(occView);
-        occView.setBounds(48, 260, 260, 30);
-
-        usernameView.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        usernameView.setForeground(new java.awt.Color(255, 255, 255));
         usernameView.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         usernameView.setText("Username");
+        usernameView.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        usernameView.setForeground(new java.awt.Color(255, 255, 255));
         dataOverview.add(usernameView);
-        usernameView.setBounds(48, 200, 260, 30);
+        usernameView.setBounds(50, 230, 260, 30);
+
+        maiView.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        maiView.setText("namesurname@gmail.com");
+        maiView.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        maiView.setForeground(new java.awt.Color(255, 255, 255));
+        dataOverview.add(maiView);
+        maiView.setBounds(50, 260, 260, 30);
 
         userProfilePanel.add(dataOverview);
         dataOverview.setBounds(0, 0, 400, 500);
@@ -1432,74 +1985,45 @@ public class scheduler_ui extends javax.swing.JFrame {
         friendsPanel.setOpaque(false);
         friendsPanel.setLayout(null);
 
-        searchButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/SearchLogo.png"))); // NOI18N
-        searchButton.setBorder(null);
-        searchButton.setOpaque(false);
-        searchButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/SearchLogo_over.png"))); // NOI18N
-        searchButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/SearchLogo_over.png"))); // NOI18N
-        searchButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                searchButtonActionPerformed(evt);
-            }
-        });
-        friendsPanel.add(searchButton);
-        searchButton.setBounds(160, 40, 30, 30);
-
-        searchField.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        searchField.setForeground(new java.awt.Color(51, 51, 51));
-        searchField.setText("Search for Users");
-        searchField.setBorder(null);
-        searchField.setOpaque(false);
-        searchField.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
-                searchFieldFocusGained(evt);
-            }
-            public void focusLost(java.awt.event.FocusEvent evt) {
-                searchFieldFocusLost(evt);
-            }
-        });
-        friendsPanel.add(searchField);
-        searchField.setBounds(202, 40, 200, 30);
-
-        serachBG.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/SearchField_closed.png"))); // NOI18N
-        friendsPanel.add(serachBG);
-        serachBG.setBounds(155, 35, 260, 40);
-
-        friednsLabel.setText("Your Friends:");
+        friednsLabel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        friednsLabel.setText("Available users:");
         friednsLabel.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
         friednsLabel.setForeground(new java.awt.Color(255, 255, 255));
         friendsPanel.add(friednsLabel);
-        friednsLabel.setBounds(160, 100, 240, 30);
+        friednsLabel.setBounds(160, 30, 240, 30);
 
         friendsView.setBorder(null);
 
-        friendsList.setBackground(new java.awt.Color(224, 92, 109));
-        friendsList.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-        friendsList.setForeground(new java.awt.Color(255, 255, 255));
         friendsList.setModel(new javax.swing.AbstractListModel<String>() {
             String[] strings = { "Charis Lundblad", "Mark Peeler", "Melina Monreal", "Herb Deshotel", "Charita Salmon", "Juliann Esch", "Jonah Kampa", "Ta Bachand" };
             public int getSize() { return strings.length; }
             public String getElementAt(int i) { return strings[i]; }
         });
+        friendsList.setBackground(new java.awt.Color(224, 92, 109));
+        friendsList.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        friendsList.setForeground(new java.awt.Color(255, 255, 255));
         friendsList.setSelectionBackground(new java.awt.Color(209, 80, 97));
+        friendsList.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
+                friendsListValueChanged(evt);
+            }
+        });
         friendsView.setViewportView(friendsList);
 
         friendsPanel.add(friendsView);
-        friendsView.setBounds(155, 130, 150, 190);
+        friendsView.setBounds(155, 70, 150, 280);
 
-        removeButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/RemoveButton.png"))); // NOI18N
-        removeButton.setBorder(null);
-        removeButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/RemoveButton_pressed.png"))); // NOI18N
-        removeButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/RemoveButton_over.png"))); // NOI18N
-        friendsPanel.add(removeButton);
-        removeButton.setBounds(225, 370, 120, 40);
-
-        addButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/AddButton.png"))); // NOI18N
-        addButton.setBorder(null);
-        addButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/AddButton_pressed.png"))); // NOI18N
-        addButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/AddButton_over.png"))); // NOI18N
-        friendsPanel.add(addButton);
-        addButton.setBounds(240, 370, 90, 40);
+        adminEditButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/EditButton.png"))); // NOI18N
+        adminEditButton.setBorder(null);
+        adminEditButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/EditButton_pressed.png"))); // NOI18N
+        adminEditButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/EditButton_over.png"))); // NOI18N
+        adminEditButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                adminEditButtonActionPerformed(evt);
+            }
+        });
+        friendsPanel.add(adminEditButton);
+        adminEditButton.setBounds(240, 370, 90, 40);
 
         friendsTile.setIcon(new javax.swing.ImageIcon(getClass().getResource("/timescheduler/PanelTile.png"))); // NOI18N
         friendsPanel.add(friendsTile);
@@ -1538,9 +2062,19 @@ public class scheduler_ui extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void caccButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_caccButtonActionPerformed
-        buttonIndex = 1;
-        CheckButtonIndex();
-        mainTab.setSelectedIndex(1);
+        String password = String.valueOf(passwordInput.getPassword());
+        String passwordConf = String.valueOf(passwordConfInput.getPassword());
+        
+        if (password.equals(passwordConf)) 
+        {
+            User newUser = new User(nameInput.getText(), emailInput.getText(), password);
+            Database.storeNewAccount(newUser);
+            LoginMenu();
+        }
+        else
+        {
+            outputLabel.setText("Passwords do not match");
+        }
     }//GEN-LAST:event_caccButtonActionPerformed
 
     private void upperPanelMouseDragged(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_upperPanelMouseDragged
@@ -1556,6 +2090,7 @@ public class scheduler_ui extends javax.swing.JFrame {
     }//GEN-LAST:event_upperPanelMousePressed
 
     private void exitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitButtonActionPerformed
+        NotifikationService.exit = false;
         dispose();
     }//GEN-LAST:event_exitButtonActionPerformed
 
@@ -1630,14 +2165,37 @@ public class scheduler_ui extends javax.swing.JFrame {
     }//GEN-LAST:event_signupButtonActionPerformed
 
     private void loginButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginButtonActionPerformed
-        if (nameInput.getText().equals("Jaro") && passwordInput.getText().equals("pass123")) 
+        String password = String.valueOf(passwordInput.getPassword());
+        if (Database.verifyLogin(nameInput.getText(), password)) 
         {
+            System.out.print(nameInput.getText() + " " + password + " verified\n");
+            currentUser = Database.loadUser(nameInput.getText());
+            
+            if (currentUser.getIsAdmin()) 
+            {
+                isAdmin = true;
+            }
+            else
+            {
+                isAdmin = false;
+            }
+            
+            //If user is a Admin
+            adminLogo.setVisible(isAdmin);
+            adminEditButton.setVisible(isAdmin);
+            adminView.setVisible(isAdmin);
+            usernameEdit.setVisible(isAdmin);
+            usernameUnderline.setVisible(isAdmin);
+            passwordEdit.setVisible(isAdmin);
+            passUnderline.setVisible(isAdmin);
+            
             buttonIndex = 1;
             CheckButtonIndex();
             mainTab.setSelectedIndex(1);
         }
         else
         {
+            System.out.print(nameInput.getText() + " " + password + " access denied\n");
             outputLabel.setText("Login failed, please try again.");
         }
     }//GEN-LAST:event_loginButtonActionPerformed
@@ -1711,13 +2269,12 @@ public class scheduler_ui extends javax.swing.JFrame {
     }//GEN-LAST:event_goBackButtonActionPerformed
 
     private void logoutButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_logoutButtonActionPerformed
+        currentUser = null;
+        currentEvent = null;
         mainTab.setSelectedIndex(0);
         LoginMenu();
         CheckButtonIndex();
         CheckVisibility();
-        nameInput.setText("Username");
-        passwordInput.setText("Password");
-        passwordConfInput.setText("Confirm Password");
     }//GEN-LAST:event_logoutButtonActionPerformed
 
     private void cancelDataEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelDataEditActionPerformed
@@ -1737,65 +2294,34 @@ public class scheduler_ui extends javax.swing.JFrame {
     }//GEN-LAST:event_cancelDataEditMousePressed
 
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
+        if (adminEdit) 
+        {
+            editedUser.setUsername(usernameEdit.getText());
+            editedUser.setEmail(mailEdit.getText());
+            editedUser.setPassword(passwordEdit.getText());
+            Database.updateUser(editedUser);
+        }
+        else
+        {
+            if (isAdmin) 
+            {
+                currentUser.setUsername(usernameEdit.getText());
+                currentUser.setPassword(passwordEdit.getText());
+            }
+            currentUser.setEmail(mailEdit.getText());
+            Database.updateUser(currentUser);
+        }
+        
+        friendsList.setModel(UsersToList(Database.loadAllUsers(), true));
+        LoadUserDetails();
         DataOverviewMenu();
     }//GEN-LAST:event_saveButtonActionPerformed
 
     private void editButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editButtonActionPerformed
+        adminEdit = false;
+        editLabel.setText("Edit your profile");
         DataEditMenu();
-        firstNameEdit.setText("Edit first name");
-        lastNameEdit.setText("Edit last name");
-        occupationEdit.setText("Edit occupation");
-        mailEdit.setText("Edit E-Mail address");
-        firstNameEdit.setForeground(new Color(204,204,204));
-        lastNameEdit.setForeground(new Color(204,204,204));
-        occupationEdit.setForeground(new Color(204,204,204));
-        mailEdit.setForeground(new Color(204,204,204));
     }//GEN-LAST:event_editButtonActionPerformed
-
-    private void searchFieldFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_searchFieldFocusGained
-        if (searchField.getText().equals("Search for Users")) 
-        {
-            searchField.setText("");
-            searchField.setForeground(Color.black);
-        }
-    }//GEN-LAST:event_searchFieldFocusGained
-
-    private void searchFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_searchFieldFocusLost
-        if (searchField.getText().equals("")) 
-        {
-            searchField.setText("Search for Users");
-            searchField.setForeground(new Color(51,51,51));
-        }
-    }//GEN-LAST:event_searchFieldFocusLost
-
-    private void searchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchButtonActionPerformed
-        searchActive = !searchActive;
-        SearchActive();
-    }//GEN-LAST:event_searchButtonActionPerformed
-
-    private void firstNameEditFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_firstNameEditFocusGained
-        if (firstNameEdit.getText().equals("Edit first name")) 
-        {
-            firstNameEdit.setText("");
-            firstNameEdit.setForeground(new Color(255,255,255));
-        }
-    }//GEN-LAST:event_firstNameEditFocusGained
-
-    private void lastNameEditFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_lastNameEditFocusGained
-        if (lastNameEdit.getText().equals("Edit last name")) 
-        {
-            lastNameEdit.setText("");
-            lastNameEdit.setForeground(new Color(255,255,255));
-        }
-    }//GEN-LAST:event_lastNameEditFocusGained
-
-    private void occupationEditFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_occupationEditFocusGained
-        if (occupationEdit.getText().equals("Edit occupation")) 
-        {
-            occupationEdit.setText("");
-            occupationEdit.setForeground(new Color(255,255,255));
-        }
-    }//GEN-LAST:event_occupationEditFocusGained
 
     private void mailEditFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_mailEditFocusGained
         if (mailEdit.getText().equals("Edit E-Mail address")) 
@@ -1804,30 +2330,6 @@ public class scheduler_ui extends javax.swing.JFrame {
             mailEdit.setForeground(new Color(255,255,255));
         }
     }//GEN-LAST:event_mailEditFocusGained
-
-    private void firstNameEditFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_firstNameEditFocusLost
-        if (firstNameEdit.getText().equals("")) 
-        {
-            firstNameEdit.setText("Edit first name");
-            firstNameEdit.setForeground(new Color(204,204,204));
-        }
-    }//GEN-LAST:event_firstNameEditFocusLost
-
-    private void lastNameEditFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_lastNameEditFocusLost
-        if (lastNameEdit.getText().equals("")) 
-        {
-            lastNameEdit.setText("Edit last name");
-            lastNameEdit.setForeground(new Color(204,204,204));
-        }
-    }//GEN-LAST:event_lastNameEditFocusLost
-
-    private void occupationEditFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_occupationEditFocusLost
-        if (occupationEdit.getText().equals("")) 
-        {
-            occupationEdit.setText("Edit occupation");
-            occupationEdit.setForeground(new Color(204,204,204));
-        }
-    }//GEN-LAST:event_occupationEditFocusLost
 
     private void mailEditFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_mailEditFocusLost
         if (mailEdit.getText().equals("")) 
@@ -1851,29 +2353,289 @@ public class scheduler_ui extends javax.swing.JFrame {
 
     private void cancelAppEditButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelAppEditButtonActionPerformed
         appEdited = false;
+        partEdited = false;
         AppEdit();
+        ClearEventInputData();
+        participantIDs = null;
+        filePath = "";
     }//GEN-LAST:event_cancelAppEditButtonActionPerformed
 
     private void appEditButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_appEditButtonActionPerformed
-        appEdited = true;
-        partEdited = false;
-        AppEdit();
+        if (appList.getSelectedIndex() != -1) 
+        {
+            appEdited = true;
+            partEdited = false;
+            AppEdit();
+            CurrentEditedEvent();
+            filePath = "";
+        }
     }//GEN-LAST:event_appEditButtonActionPerformed
 
     private void appSaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_appSaveButtonActionPerformed
+        String[] address = {"", ""};
+        address[0] = streetEventInput.getText();
+        address[1] = cityEventInput.getText();
+        String[] date = dateEventInput.getDate().toString().split("-");
+        String[] time = btimeEventInput.getTime().toString().split(":");
+        
+        if (participantIDs.length == 0) 
+        {
+            participantIDs = new int[1];
+        }
+        
+        Date newDate = new Date(Integer.parseInt(date[0]) - 1900, 
+                                Integer.parseInt(date[1]) - 1, 
+                                Integer.parseInt(date[2]), 
+                                Integer.parseInt(time[0]), 
+                                Integer.parseInt(time[1]), 
+                                0);
+        
+        currentEvent.setTitle(nameEventInput.getText());
+        currentEvent.setAddress(address);
+        currentEvent.setDate(newDate);
+        currentEvent.setDuration(durationEventInput.getText());
+        currentEvent.setParticipantIDs(participantIDs);
+        currentEvent.setNotification(notifEventInput.getSelectedIndex()+1);
+        currentEvent.setPriority(priorityEventInput.getSelectedIndex()+1);
+        
+        Database.UpdateEvent(currentEvent);
+        
         appEdited = false;
         AppEdit();
+        ClearEventInputData();
+        LoadEventsToList();
+        participantIDs = new int[0];
     }//GEN-LAST:event_appSaveButtonActionPerformed
 
     private void partEditButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_partEditButtonActionPerformed
         partEdited = true;
         AppEdit();
+        
+        partContactsList.setModel(UsersToList(Database.loadAllUsers(), true));
     }//GEN-LAST:event_partEditButtonActionPerformed
 
     private void partSaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_partSaveButtonActionPerformed
         partEdited = false;
         AppEdit();
     }//GEN-LAST:event_partSaveButtonActionPerformed
+
+    private void emailInputFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_emailInputFocusGained
+        if (emailInput.getText().equals("E-Mail")) 
+        {
+            emailInput.setText("");
+            emailInput.setForeground(new Color(0, 0, 0));
+        }
+    }//GEN-LAST:event_emailInputFocusGained
+
+    private void emailInputFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_emailInputFocusLost
+        if (emailInput.getText().equals("")) 
+        {
+            emailInput.setText("E-Mail");
+            emailInput.setForeground(new Color(51, 51, 51));
+        }
+    }//GEN-LAST:event_emailInputFocusLost
+
+    private void appRemoveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_appRemoveButtonActionPerformed
+        Event[] events = {};
+        events = GetAllSortedEvents();
+        int index;
+        index = appList.getSelectedIndex();
+        
+        Database.deleteEvent(events[index]);
+        
+        LoadEventsToList();
+    }//GEN-LAST:event_appRemoveButtonActionPerformed
+
+    private void appListValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_appListValueChanged
+        CurrentEditedEvent();
+    }//GEN-LAST:event_appListValueChanged
+
+    private void partAddButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_partAddButtonActionPerformed
+        int index = partContactsList.getSelectedIndex();
+        int length = participantIDs.length;
+        boolean isSaved = false;
+        
+        if (index != -1) 
+        {
+            String username = partContactsList.getSelectedValue();
+            User tempUser = Database.loadUser(username);
+            
+            //Checking if the array is empty
+            if (length == 0)
+            {
+                participantIDs = new int[length +1];
+                participantIDs[length] = tempUser.getId();
+            }
+            else
+            {
+                //Checking if user ID is already saved
+                for (int i = 0; i < participantIDs.length; i++) 
+                {
+                    if (participantIDs[i] == tempUser.getId()) 
+                    {
+                        isSaved = true;
+                    }
+                }
+                
+                if (!isSaved) 
+                {
+                    //Creating new array with one more space and copying from the original array
+                    int[] tempIDs = new int[length +1];
+                    for (int i = 0; i < length; i++) 
+                    {
+                        tempIDs[i] = participantIDs[i];
+                    }
+                    tempIDs[length] = tempUser.getId();
+                    participantIDs = tempIDs;
+                }
+                isSaved = false;
+            }
+            
+            partAddContactsList.setModel(IDsToList(participantIDs));
+        }
+    }//GEN-LAST:event_partAddButtonActionPerformed
+
+    private void appAddButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_appAddButtonActionPerformed
+        String[] address = {"", ""};
+        address[0] = streetEventInput.getText();
+        address[1] = cityEventInput.getText();
+        String[] date = dateEventInput.getDate().toString().split("-");
+        String[] time = btimeEventInput.getTime().toString().split(":");
+        Date newDate = new Date(Integer.parseInt(date[0]) - 1900, 
+                                Integer.parseInt(date[1]) - 1, 
+                                Integer.parseInt(date[2]), 
+                                Integer.parseInt(time[0]), 
+                                Integer.parseInt(time[1]), 
+                                0);
+        
+        if (participantIDs.length == 0) 
+        {
+            participantIDs = new int[1];
+        }
+        
+        Event newEvent = new Event(nameEventInput.getText(), 
+                                   address, 
+                                   newDate, 
+                                   durationEventInput.getText(), 
+                                   participantIDs, 
+                                   notifEventInput.getSelectedIndex()+1,
+                                   priorityEventInput.getSelectedIndex()+1,
+                                   currentUser.getId());
+        
+        if (!filePath.equals("")) 
+        {
+            newEvent.addAttachmentToEvent(filePath);
+        }
+        
+        Database.storeNewEvent(newEvent);
+        LoadEventsToList();
+        ClearEventInputData();
+        participantIDs = null;
+        filePath = "";
+        participantIDs = new int[0];
+    }//GEN-LAST:event_appAddButtonActionPerformed
+
+    private void usernameEditFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_usernameEditFocusGained
+        if (usernameEdit.getText().equals("Edit username")) 
+        {
+            usernameEdit.setText("");
+            usernameEdit.setForeground(new Color(255,255,255));
+        }
+    }//GEN-LAST:event_usernameEditFocusGained
+
+    private void usernameEditFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_usernameEditFocusLost
+        if (usernameEdit.getText().equals("")) 
+        {
+            usernameEdit.setText("Edit username");
+            usernameEdit.setForeground(new Color(204,204,204));
+        }
+    }//GEN-LAST:event_usernameEditFocusLost
+
+    private void passwordEditFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_passwordEditFocusGained
+        if (passwordEdit.getText().equals("Edit password")) 
+        {
+            passwordEdit.setText("");
+            passwordEdit.setForeground(new Color(255,255,255));
+        }
+    }//GEN-LAST:event_passwordEditFocusGained
+
+    private void passwordEditFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_passwordEditFocusLost
+        if (passwordEdit.getText().equals("")) 
+        {
+            passwordEdit.setText("Edit password");
+            passwordEdit.setForeground(new Color(204,204,204));
+        }
+    }//GEN-LAST:event_passwordEditFocusLost
+
+    private void friendsListValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_friendsListValueChanged
+        editedUser = Database.loadUser(friendsList.getSelectedValue());
+        LoadEditedUserData();
+    }//GEN-LAST:event_friendsListValueChanged
+
+    private void adminEditButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_adminEditButtonActionPerformed
+        if (friendsList.getSelectedIndex() != -1) 
+        {
+            adminEdit = true;
+            editLabel.setText("Edit user profile");
+            editedUser = Database.loadUser(friendsList.getSelectedValue());
+            LoadEditedUserData();
+            DataEditMenu();
+        }
+    }//GEN-LAST:event_adminEditButtonActionPerformed
+
+    private void attachmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_attachmentButtonActionPerformed
+        if (currentEvent != null) 
+        {
+            currentEvent.addAttachmentToEvent(currentEvent.addNewAttachment());
+        }
+        else
+        {
+            filePath = Event.addNewAttachment();
+            System.out.println(filePath);
+        }
+    }//GEN-LAST:event_attachmentButtonActionPerformed
+
+    private void openFileButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openFileButtonActionPerformed
+        String[] path = currentEvent.getAttachments();
+        
+        
+        for (int i = 0; i < path.length; i++) 
+        {
+            File file = new File(path[i]);
+            try
+            {
+                if (currentEvent != null) 
+                {
+                    if (file.exists()) 
+                    {
+                        if (Desktop.isDesktopSupported()) 
+                        {
+                            Desktop.getDesktop().open(file);
+                        }
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                System.out.println(e);
+            }
+        }
+        
+        
+        
+    }//GEN-LAST:event_openFileButtonActionPerformed
+
+    private void appExportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_appExportButtonActionPerformed
+        Saveschedule schedule = new Saveschedule();
+        try 
+        {
+            schedule.saveschedule(currentUser.getId());
+        } 
+        catch (Exception ex) 
+        {
+            Logger.getLogger(scheduler_ui.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_appExportButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -1911,8 +2673,10 @@ public class scheduler_ui extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton addButton;
     private javax.swing.JLabel addLabel;
+    private javax.swing.JButton adminEditButton;
+    private javax.swing.JLabel adminLogo;
+    private javax.swing.JLabel adminView;
     private javax.swing.JButton appAddButton;
     private javax.swing.JLabel appAppTile;
     private javax.swing.JPanel appDisplayPanel;
@@ -1924,6 +2688,7 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JPanel appPartPanel;
     private javax.swing.JButton appRemoveButton;
     private javax.swing.JButton appSaveButton;
+    private javax.swing.JButton attachmentButton;
     private javax.swing.JLabel bgLabel;
     private javax.swing.JPanel bgPanel;
     private com.github.lgooddatepicker.components.TimePicker btimeEventInput;
@@ -1939,14 +2704,14 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JPanel dataOverview;
     private com.github.lgooddatepicker.components.DatePicker dateEventInput;
     private javax.swing.JLabel dateEventLabel;
+    private javax.swing.JTextField durationEventInput;
     private javax.swing.JLabel durationEventLabel;
-    private com.github.lgooddatepicker.components.TimePicker duratonEventInput;
     private javax.swing.JButton editButton;
     private javax.swing.JLabel editLabel;
+    private javax.swing.JTextField emailInput;
+    private javax.swing.JPanel emailUnderline;
     private javax.swing.JLabel eventPartLabel;
     private javax.swing.JButton exitButton;
-    private javax.swing.JTextField firstNameEdit;
-    private javax.swing.JPanel fistNameUnderline;
     private javax.swing.JLabel friednsLabel;
     private javax.swing.JList<String> friendsList;
     private javax.swing.JPanel friendsPanel;
@@ -1955,8 +2720,6 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JButton goBackButton;
     private javax.swing.JButton homeButton;
     private javax.swing.JPanel homePanel;
-    private javax.swing.JTextField lastNameEdit;
-    private javax.swing.JPanel lastNameUnderline;
     private javax.swing.JScrollPane listDisplay;
     private javax.swing.JButton loginButton;
     private javax.swing.JPanel loginPanel;
@@ -1974,33 +2737,29 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JLabel nameEventLabel;
     private javax.swing.JTextField nameInput;
     private javax.swing.JPanel nameUnderline;
-    private javax.swing.JLabel nameView;
     private javax.swing.JLabel nitifEventLabel;
     private javax.swing.JComboBox<String> notifEventInput;
-    private javax.swing.JLabel occView;
-    private javax.swing.JTextField occupationEdit;
-    private javax.swing.JPanel occupationUnderline;
+    private javax.swing.JButton openFileButton;
     private javax.swing.JLabel outputLabel;
+    private javax.swing.JButton partAddButton;
     private javax.swing.JScrollPane partAddContacts;
     private javax.swing.JList<String> partAddContactsList;
     private javax.swing.JScrollPane partContacts;
     private javax.swing.JList<String> partContactsList;
     private javax.swing.JButton partEditButton;
     private javax.swing.JButton partSaveButton;
+    private javax.swing.JPanel passUnderline;
     private javax.swing.JButton passVisButton;
     private javax.swing.JPasswordField passwordConfInput;
     private javax.swing.JPanel passwordConfUnderline;
+    private javax.swing.JTextField passwordEdit;
     private javax.swing.JPasswordField passwordInput;
     private javax.swing.JPanel passwordUnderline;
     private javax.swing.JComboBox<String> priorityEventInput;
     private javax.swing.JLabel priorityEventLabel;
     private javax.swing.JButton profilesButton;
     private javax.swing.JPanel profilesPanel;
-    private javax.swing.JButton removeButton;
     private javax.swing.JButton saveButton;
-    private javax.swing.JButton searchButton;
-    private javax.swing.JTextField searchField;
-    private javax.swing.JLabel serachBG;
     private javax.swing.JButton signupButton;
     private javax.swing.JTextField streetEventInput;
     private javax.swing.JLabel streetEventLabel;
@@ -2040,6 +2799,8 @@ public class scheduler_ui extends javax.swing.JFrame {
     private javax.swing.JLabel userLogo;
     private javax.swing.JPanel userProfilePanel;
     private javax.swing.JLabel userTile;
+    private javax.swing.JTextField usernameEdit;
+    private javax.swing.JPanel usernameUnderline;
     private javax.swing.JLabel usernameView;
     private javax.swing.JLabel welcomeLabel;
     private javax.swing.JLabel yourContLabel;

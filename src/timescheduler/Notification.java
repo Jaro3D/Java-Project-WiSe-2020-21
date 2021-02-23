@@ -292,7 +292,7 @@ public class Notification
     }
     /**
      * This is used to change the "eventDateEnd" attribute.
-     * @param eventDateEnd 
+     * @param eventDuration 
      */
     public void setEventDuration(String eventDuration)
     {

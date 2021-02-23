@@ -76,7 +76,7 @@ public class User {
      * @param username
      * @param email
      * @param password
-     * @param friendIDs
+     * @param contactIDs
      * @param isadmin 
      */
     public User(int id, String username, String email, String password, String contactIDs, int isadmin) {

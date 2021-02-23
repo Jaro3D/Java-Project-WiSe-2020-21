@@ -79,10 +79,6 @@ public class Email
     /**
      * This allows to create an email object by giving the following attributes. 
      * 
-     * @param senderAddress
-     * @param password
-     * @param host
-     * @param port
      * @param subject
      * @param emailText
      * @param receiverAdresse
